@@ -1,20 +1,33 @@
 @react.component
 let make = () => {
-  let (count, setCount) = React.useState(() => 0)
+  // 1~9 패를 배열로 생성
+  let myCards = Belt.Array.makeBy(9, i => i + 1)
 
-  <div className="p-6">
-    <h1 className="text-3xl font-semibold"> {"What is this about?"->React.string} </h1>
-    <p>
-      {React.string("This is a simple template for a Vite project using ReScript & Tailwind CSS.")}
-    </p>
-    <h2 className="text-2xl font-semibold mt-5"> {React.string("Fast Refresh Test")} </h2>
-    <Button onClick={_ => setCount(count => count + 1)}>
-      {React.string(`count is ${count->Int.toString}`)}
-    </Button>
-    <p>
-      {React.string("Edit ")}
-      <code> {React.string("src/App.res")} </code>
-      {React.string(" and save to test Fast Refresh.")}
-    </p>
-  </div>
+  // (예시) 각 라운드에 내가 낸 카드 상태
+  let (myBoard, setMyBoard) = React.useState(() => Belt.Array.make(9, None))
+
+  <main className="flex flex-col items-center p-4">
+    // 보드 슬롯 (윗면)
+    <section className="flex flex-row mb-6">
+      {React.array(
+        Belt.Array.mapWithIndex(myBoard, (i, cardOpt) =>
+          <BoardSlot round=(i + 1) card=cardOpt key={string_of_int(i)} />
+        )
+      )}
+    </section>
+
+    // 내 패 (아랫면)
+    <section className="flex flex-row">
+      {React.array(
+        myCards->Belt.Array.map(n =>
+          <Card
+            number=n
+            onClick={() => Js.log2("카드 선택:", n)}
+            // 실제로는 선택/사용 여부로 비활성화 처리 필요
+            key={Js.Int.toString(n)}
+          />
+        )
+      )}
+    </section>
+  </main>
 }
