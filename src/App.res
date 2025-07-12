@@ -1,17 +1,40 @@
 @react.component
 let make = () => {
-  // 1~9 패를 배열로 생성
-  let myCards = Belt.Array.makeBy(9, i => i + 1)
-
-  // (예시) 각 라운드에 내가 낸 카드 상태
+  // 전체 카드 생성 및 상태 초기화
+  let allCards = Belt.Array.makeBy(9, i => i + 1)
+  let (hand, setHand) = React.useState(() => allCards)
   let (myBoard, setMyBoard) = React.useState(() => Belt.Array.make(9, None))
+  let (currentRound, setCurrentRound) = React.useState(() => 0)
+
+  // 카드 클릭 핸들러
+  let onCardClick = n => {
+    switch Belt.Array.get(myBoard, currentRound) {
+    | Some(None) =>
+      // update board immutably via functional setter
+      setMyBoard(prevBoard => {
+        let newBoard = Belt.Array.copy(prevBoard)
+        ignore(Belt.Array.set(newBoard, currentRound, Some(n)))
+        newBoard
+      })
+      // update hand
+      setHand(prevHand => Belt.Array.keep(prevHand, c => c != n))
+      // advance round
+      setCurrentRound(prevRound => prevRound + 1)
+    | _ => ()
+    }
+  }
 
   <main className="flex flex-col items-center p-4">
     // 보드 슬롯 (윗면)
     <section className="flex flex-row mb-6">
       {React.array(
         Belt.Array.mapWithIndex(myBoard, (i, cardOpt) =>
-          <BoardSlot round=(i + 1) card=cardOpt key={string_of_int(i)} />
+          <BoardSlot
+            round=(i + 1)
+            card=cardOpt
+            className={if i == currentRound { "ring-4 ring-blue-400" } else { "" }}
+            key={string_of_int(i)}
+          />
         )
       )}
     </section>
@@ -19,11 +42,12 @@ let make = () => {
     // 내 패 (아랫면)
     <section className="flex flex-row">
       {React.array(
-        myCards->Belt.Array.map(n =>
+        hand->Belt.Array.map(n =>
           <Card
             number=n
-            onClick={() => Js.log2("카드 선택:", n)}
-            // 실제로는 선택/사용 여부로 비활성화 처리 필요
+            onClick={() => onCardClick(n)}
+            disabled=false
+            selected=false
             key={Js.Int.toString(n)}
           />
         )

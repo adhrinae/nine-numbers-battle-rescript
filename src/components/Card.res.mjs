@@ -3,10 +3,12 @@
 import * as JsxRuntime from "react/jsx-runtime";
 
 function Card(props) {
+  var __disabled = props.disabled;
   var __selected = props.selected;
   var onClick = props.onClick;
   var number = props.number;
   var selected = __selected !== undefined ? __selected : false;
+  var disabled = __disabled !== undefined ? __disabled : false;
   var cardColor = function (n) {
     if (n % 2 === 1) {
       return "bg-white text-black border-gray-400";
@@ -14,14 +16,16 @@ function Card(props) {
       return "bg-gray-800 text-white border-gray-700";
     }
   };
-  var classes = "rounded-lg border shadow flex items-center justify-center w-16 h-24 m-2 text-2xl cursor-pointer transition-all " + cardColor(number) + (
+  var classes = "rounded-lg border shadow flex items-center justify-center w-16 h-24 m-2 text-2xl transition-all " + cardColor(number) + (
     selected ? " ring-4 ring-blue-400" : ""
+  ) + (
+    disabled ? " opacity-40 cursor-not-allowed" : " cursor-pointer"
   );
   return JsxRuntime.jsx("div", {
               children: number.toString(),
               className: classes,
               onClick: (function (param) {
-                  if (onClick !== undefined) {
+                  if (!disabled && onClick !== undefined) {
                     return onClick();
                   }
                   

@@ -4,33 +4,64 @@ import * as Card from "./components/Card.res.mjs";
 import * as React from "react";
 import * as BoardSlot from "./components/BoardSlot.res.mjs";
 import * as Belt_Array from "rescript/lib/es6/belt_Array.js";
+import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as JsxRuntime from "react/jsx-runtime";
 
 function App(props) {
-  var myCards = Belt_Array.makeBy(9, (function (i) {
+  var allCards = Belt_Array.makeBy(9, (function (i) {
           return i + 1 | 0;
         }));
   var match = React.useState(function () {
+        return allCards;
+      });
+  var setHand = match[1];
+  var match$1 = React.useState(function () {
         return Belt_Array.make(9, undefined);
       });
+  var setMyBoard = match$1[1];
+  var myBoard = match$1[0];
+  var match$2 = React.useState(function () {
+        return 0;
+      });
+  var setCurrentRound = match$2[1];
+  var currentRound = match$2[0];
   return JsxRuntime.jsxs("main", {
               children: [
                 JsxRuntime.jsx("section", {
-                      children: Belt_Array.mapWithIndex(match[0], (function (i, cardOpt) {
+                      children: Belt_Array.mapWithIndex(myBoard, (function (i, cardOpt) {
                               return JsxRuntime.jsx(BoardSlot.make, {
                                           round: i + 1 | 0,
-                                          card: cardOpt
+                                          card: cardOpt,
+                                          className: i === currentRound ? "ring-4 ring-blue-400" : ""
                                         }, String(i));
                             })),
                       className: "flex flex-row mb-6"
                     }),
                 JsxRuntime.jsx("section", {
-                      children: Belt_Array.map(myCards, (function (n) {
+                      children: Belt_Array.map(match[0], (function (n) {
                               return JsxRuntime.jsx(Card.make, {
                                           number: n,
                                           onClick: (function () {
-                                              console.log("카드 선택:", n);
-                                            })
+                                              var match = Belt_Array.get(myBoard, currentRound);
+                                              if (match !== undefined && Caml_option.valFromOption(match) === undefined) {
+                                                setMyBoard(function (prevBoard) {
+                                                      var newBoard = prevBoard.slice(0);
+                                                      Belt_Array.set(newBoard, currentRound, n);
+                                                      return newBoard;
+                                                    });
+                                                setHand(function (prevHand) {
+                                                      return Belt_Array.keep(prevHand, (function (c) {
+                                                                    return c !== n;
+                                                                  }));
+                                                    });
+                                                return setCurrentRound(function (prevRound) {
+                                                            return prevRound + 1 | 0;
+                                                          });
+                                              }
+                                              
+                                            }),
+                                          selected: false,
+                                          disabled: false
                                         }, n.toString());
                             })),
                       className: "flex flex-row"

@@ -3,10 +3,12 @@
 import * as JsxRuntime from "react/jsx-runtime";
 
 function BoardSlot(props) {
+  var __className = props.className;
   var card = props.card;
+  var className = __className !== undefined ? __className : "";
   return JsxRuntime.jsx("div", {
               children: card !== undefined ? card.toString() : "",
-              className: "w-16 h-24 m-2 flex items-center justify-center border-2 border-dashed rounded-lg bg-gray-100"
+              className: "w-16 h-24 m-2 flex items-center justify-center border-2 border-dashed rounded-lg bg-gray-100 " + className
             });
 }
 
