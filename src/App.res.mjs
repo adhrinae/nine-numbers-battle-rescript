@@ -25,8 +25,30 @@ function App(props) {
       });
   var setCurrentRound = match$2[1];
   var currentRound = match$2[0];
+  var match$3 = React.useState(function () {
+        return Belt_Array.make(9, undefined);
+      });
+  var setOppBoard = match$3[1];
+  var match$4 = React.useState(function () {
+        return false;
+      });
+  var setWaiting = match$4[1];
   return JsxRuntime.jsxs("main", {
               children: [
+                JsxRuntime.jsx("section", {
+                      children: Belt_Array.mapWithIndex(match$3[0], (function (i, cardOpt) {
+                              return JsxRuntime.jsx(BoardSlot.make, {
+                                          round: i + 1 | 0,
+                                          card: cardOpt,
+                                          className: "transform rotate-180"
+                                        }, "opp-" + String(i));
+                            })),
+                      className: "flex flex-row mb-6"
+                    }),
+                match$4[0] ? JsxRuntime.jsx("div", {
+                        children: "Waiting for opponent...",
+                        className: "my-2"
+                      }) : null,
                 JsxRuntime.jsx("section", {
                       children: Belt_Array.mapWithIndex(myBoard, (function (i, cardOpt) {
                               return JsxRuntime.jsx(BoardSlot.make, {
@@ -54,9 +76,23 @@ function App(props) {
                                                                     return c !== n;
                                                                   }));
                                                     });
-                                                return setCurrentRound(function (prevRound) {
-                                                            return prevRound + 1 | 0;
-                                                          });
+                                                setCurrentRound(function (prevRound) {
+                                                      return prevRound + 1 | 0;
+                                                    });
+                                                setWaiting(function (param) {
+                                                      return true;
+                                                    });
+                                                setTimeout((function () {
+                                                        setOppBoard(function (prev) {
+                                                              var newBoard = prev.slice(0);
+                                                              Belt_Array.set(newBoard, currentRound, n);
+                                                              return newBoard;
+                                                            });
+                                                        setWaiting(function (param) {
+                                                              return false;
+                                                            });
+                                                      }), 3000);
+                                                return ;
                                               }
                                               
                                             }),

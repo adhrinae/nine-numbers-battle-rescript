@@ -5,12 +5,15 @@ let make = () => {
   let (hand, setHand) = React.useState(() => allCards)
   let (myBoard, setMyBoard) = React.useState(() => Belt.Array.make(9, None))
   let (currentRound, setCurrentRound) = React.useState(() => 0)
+  // 상대 opponent state
+  let (oppBoard, setOppBoard) = React.useState(() => Belt.Array.make(9, None))
+  let (waiting, setWaiting) = React.useState(() => false)
 
   // 카드 클릭 핸들러
   let onCardClick = n => {
     switch Belt.Array.get(myBoard, currentRound) {
     | Some(None) =>
-      // update board immutably via functional setter
+      // 내가 보드에 카드 제출
       setMyBoard(prevBoard => {
         let newBoard = Belt.Array.copy(prevBoard)
         ignore(Belt.Array.set(newBoard, currentRound, Some(n)))
@@ -20,12 +23,43 @@ let make = () => {
       setHand(prevHand => Belt.Array.keep(prevHand, c => c != n))
       // advance round
       setCurrentRound(prevRound => prevRound + 1)
+      // opponent 준비 메시지
+      setWaiting((_) => true)
+      let roundIndex = currentRound
+      // 3초 후 opponent 보드에 같은 카드 추가
+      ignore(Js.Global.setTimeout(() => {
+        setOppBoard(prev => {
+          let newBoard = Belt.Array.copy(prev)
+          ignore(Belt.Array.set(newBoard, roundIndex, Some(n)))
+          newBoard
+        })
+        setWaiting((_) => false)
+      }, 3000))
     | _ => ()
     }
   }
 
   <main className="flex flex-col items-center p-4">
-    // 보드 슬롯 (윗면)
+    // opponent board slots (mirrored)
+    <section className="flex flex-row mb-6">
+      {React.array(
+        Belt.Array.mapWithIndex(oppBoard, (i, cardOpt) =>
+          <BoardSlot
+            round=(i + 1)
+            card=cardOpt
+            // invert each slot (and its number) for opponent view
+            className="transform rotate-180"
+            key={"opp-" ++ string_of_int(i)}
+          />
+        )
+      )}
+    </section>
+    {waiting ?
+      <div className="my-2">{React.string("Waiting for opponent...")}</div>
+    :
+      React.null
+    }
+    // my board slots
     <section className="flex flex-row mb-6">
       {React.array(
         Belt.Array.mapWithIndex(myBoard, (i, cardOpt) =>
@@ -38,8 +72,7 @@ let make = () => {
         )
       )}
     </section>
-
-    // 내 패 (아랫면)
+    // my hand cards
     <section className="flex flex-row">
       {React.array(
         hand->Belt.Array.map(n =>
