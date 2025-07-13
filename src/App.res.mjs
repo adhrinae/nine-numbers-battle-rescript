@@ -48,6 +48,16 @@ function App(props) {
         return false;
       });
   var setWaiting = match$7[1];
+  var match$8 = React.useState(function () {
+        return "";
+      });
+  var setLastResult = match$8[1];
+  var lastResult = match$8[0];
+  var match$9 = React.useState(function () {
+        return Belt_Array.make(9, undefined);
+      });
+  var setWinners = match$9[1];
+  var winners = match$9[0];
   var oppWhiteCount = Belt_Array.keep(oppHand, (function (c) {
           return c % 2 === 1;
         })).length;
@@ -71,10 +81,22 @@ function App(props) {
                       }),
                   JsxRuntime.jsx("section", {
                         children: Belt_Array.mapWithIndex(match$3[0], (function (i, cardOpt) {
+                                var match = Belt_Array.get(winners, i);
+                                var winnerBgOpp;
+                                if (match !== undefined) {
+                                  var w = Caml_option.valFromOption(match);
+                                  winnerBgOpp = w !== undefined ? (
+                                      w === "Opponent wins" ? " bg-red-200" : (
+                                          w === "You win" ? " bg-gray-200" : " bg-yellow-200"
+                                        )
+                                    ) : "";
+                                } else {
+                                  winnerBgOpp = "";
+                                }
                                 return JsxRuntime.jsx(BoardSlot.make, {
                                             round: i + 1 | 0,
                                             card: cardOpt,
-                                            className: "transform rotate-180",
+                                            className: "transform rotate-180" + winnerBgOpp,
                                             teamColor: oppColor
                                           }, "opp-" + String(i));
                               })),
@@ -84,14 +106,31 @@ function App(props) {
                           children: "Waiting for opponent...",
                           className: "my-2"
                         }) : null,
+                  lastResult !== "" ? JsxRuntime.jsx("div", {
+                          children: "Result: " + lastResult,
+                          className: "my-2"
+                        }) : null,
                   JsxRuntime.jsx("section", {
                         children: Belt_Array.mapWithIndex(myBoard, (function (i, cardOpt) {
+                                var ringClass = i === currentRound ? (
+                                    playerColor === "blue" ? "ring-4 ring-blue-400" : "ring-4 ring-red-400"
+                                  ) : "";
+                                var match = Belt_Array.get(winners, i);
+                                var winnerBgMy;
+                                if (match !== undefined) {
+                                  var w = Caml_option.valFromOption(match);
+                                  winnerBgMy = w !== undefined ? (
+                                      w === "You win" ? " bg-green-200" : (
+                                          w === "Opponent wins" ? " bg-gray-200" : " bg-yellow-200"
+                                        )
+                                    ) : "";
+                                } else {
+                                  winnerBgMy = "";
+                                }
                                 return JsxRuntime.jsx(BoardSlot.make, {
                                             round: i + 1 | 0,
                                             card: cardOpt,
-                                            className: i === currentRound ? (
-                                                playerColor === "blue" ? "ring-4 ring-blue-400" : "ring-4 ring-red-400"
-                                              ) : "",
+                                            className: ringClass + winnerBgMy,
                                             teamColor: playerColor
                                           }, String(i));
                               })),
@@ -121,15 +160,27 @@ function App(props) {
                                                         return true;
                                                       });
                                                   setTimeout((function () {
+                                                          var oppMove = (Math.random() * 9.0 | 0) + 1 | 0;
                                                           setOppBoard(function (prev) {
                                                                 var newBoard = prev.slice(0);
-                                                                Belt_Array.set(newBoard, currentRound, n);
+                                                                Belt_Array.set(newBoard, currentRound, oppMove);
                                                                 return newBoard;
                                                               });
                                                           setOppHand(function (prev) {
                                                                 return Belt_Array.keep(prev, (function (c) {
-                                                                              return c !== n;
+                                                                              return c !== oppMove;
                                                                             }));
+                                                              });
+                                                          var winnerText = n === oppMove ? "Tie" : (
+                                                              n === 1 && oppMove === 9 || !(n === 9 && oppMove === 1 || n <= oppMove) ? "You win" : "Opponent wins"
+                                                            );
+                                                          setLastResult(function (param) {
+                                                                return winnerText;
+                                                              });
+                                                          setWinners(function (prev) {
+                                                                var newW = prev.slice(0);
+                                                                Belt_Array.set(newW, currentRound, winnerText);
+                                                                return newW;
                                                               });
                                                           setWaiting(function (param) {
                                                                 return false;

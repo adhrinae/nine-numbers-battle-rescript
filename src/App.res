@@ -15,6 +15,9 @@ let make = () => {
   let oppColor = if playerColor == "blue" { "red" } else { "blue" }
 
   let (waiting, setWaiting) = React.useState(() => false)
+  let (lastResult, setLastResult) = React.useState(() => "")
+  // track each round winner: "You win", "Opponent wins", "Tie"
+  let (winners, setWinners) = React.useState(() => Belt.Array.make(9, None))
 
   // opponent card counts (white=odd, black=even)
   let oppWhiteCount =
@@ -46,13 +49,37 @@ let make = () => {
       let roundIndex = currentRound
       // 3초 후 opponent 보드에 같은 카드 추가
       ignore(Js.Global.setTimeout(() => {
+        // opponent plays random card
+        let oppMove = int_of_float(Js.Math.random() *. 9.0) + 1
         setOppBoard(prev => {
           let newBoard = Belt.Array.copy(prev)
-          ignore(Belt.Array.set(newBoard, roundIndex, Some(n)))
+          ignore(Belt.Array.set(newBoard, roundIndex, Some(oppMove)))
           newBoard
         })
         // remove card from opponent hand
-        setOppHand(prev => Belt.Array.keep(prev, c => c != n))
+        setOppHand(prev => Belt.Array.keep(prev, c => c != oppMove))
+        // determine round result
+        let winnerText =
+          if n == oppMove {
+            "Tie"
+          } else if n == 1 && oppMove == 9 {
+            // 1 beats 9
+            "You win"
+          } else if n == 9 && oppMove == 1 {
+            // 9 loses to 1
+            "Opponent wins"
+          } else if n > oppMove {
+            "You win"
+          } else {
+            "Opponent wins"
+          }
+        setLastResult((_) => winnerText)
+        // record winner for this round
+        setWinners(prev => {
+          let newW = Belt.Array.copy(prev)
+          ignore(Belt.Array.set(newW, roundIndex, Some(winnerText)))
+          newW
+        })
         setWaiting((_) => false)
       }, 3000))
     | _ => ()
@@ -87,16 +114,22 @@ let make = () => {
       // opponent board slots (mirrored)
       <section className="flex flex-row mb-6">
         {React.array(
-          Belt.Array.mapWithIndex(oppBoard, (i, cardOpt) =>
+          Belt.Array.mapWithIndex(oppBoard, (i, cardOpt) => {
+            let winnerBgOpp =
+              switch Belt.Array.get(winners, i) {
+              | Some(Some(w)) when w == "Opponent wins" => " bg-red-200"
+              | Some(Some(w)) when w == "You win" => " bg-gray-200"
+              | Some(Some(_)) => " bg-yellow-200"
+              | _ => ""
+              }
             <BoardSlot
               round=(i + 1)
               card=cardOpt
-              // invert each slot (and its number) for opponent view
-              className="transform rotate-180"
+              className={"transform rotate-180" ++ winnerBgOpp}
               teamColor=oppColor
               key={"opp-" ++ string_of_int(i)}
             />
-          )
+          })
         )}
       </section>
       {waiting ?
@@ -104,28 +137,33 @@ let make = () => {
       :
         React.null
       }
+      {lastResult != "" ?
+        <div className="my-2">{React.string("Result: " ++ lastResult)}</div>
+      :
+        React.null
+      }
       // my board slots
       <section className="flex flex-row mb-6">
         {React.array(
-          Belt.Array.mapWithIndex(myBoard, (i, cardOpt) =>
+          Belt.Array.mapWithIndex(myBoard, (i, cardOpt) => {
+            let ringClass = if i == currentRound {
+              if playerColor == "blue" { "ring-4 ring-blue-400" } else { "ring-4 ring-red-400" }
+            } else { "" }
+            let winnerBgMy =
+              switch Belt.Array.get(winners, i) {
+              | Some(Some(w)) when w == "You win" => " bg-green-200"
+              | Some(Some(w)) when w == "Opponent wins" => " bg-gray-200"
+              | Some(Some(_)) => " bg-yellow-200"
+              | _ => ""
+              }
             <BoardSlot
               round=(i + 1)
               card=cardOpt
-              className={
-                if i == currentRound {
-                  if playerColor == "blue" {
-                    "ring-4 ring-blue-400"
-                  } else {
-                    "ring-4 ring-red-400"
-                  }
-                } else {
-                  ""
-                }
-              }
+              className={ringClass ++ winnerBgMy}
               teamColor=playerColor
               key={string_of_int(i)}
             />
-          )
+          })
         )}
       </section>
       // my hand cards
