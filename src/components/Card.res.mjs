@@ -3,12 +3,14 @@
 import * as JsxRuntime from "react/jsx-runtime";
 
 function Card(props) {
+  var __teamColor = props.teamColor;
   var __disabled = props.disabled;
   var __selected = props.selected;
   var onClick = props.onClick;
   var number = props.number;
   var selected = __selected !== undefined ? __selected : false;
   var disabled = __disabled !== undefined ? __disabled : false;
+  var teamColor = __teamColor !== undefined ? __teamColor : "blue";
   var cardColor = function (n) {
     if (n % 2 === 1) {
       return "bg-white text-black border-gray-400";
@@ -16,9 +18,10 @@ function Card(props) {
       return "bg-gray-800 text-white border-gray-700";
     }
   };
-  var classes = "rounded-lg border shadow flex items-center justify-center w-16 h-24 m-2 text-2xl transition-all " + cardColor(number) + (
-    selected ? " ring-4 ring-blue-400" : ""
-  ) + (
+  var ringClass = selected ? (
+      teamColor === "blue" ? " ring-4 ring-blue-400" : " ring-4 ring-red-400"
+    ) : "";
+  var classes = "rounded-lg border shadow flex items-center justify-center w-16 h-24 m-2 text-2xl transition-all " + cardColor(number) + ringClass + (
     disabled ? " opacity-40 cursor-not-allowed" : " cursor-pointer"
   );
   return JsxRuntime.jsx("div", {

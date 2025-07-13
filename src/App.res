@@ -7,13 +7,25 @@ let make = () => {
   let (currentRound, setCurrentRound) = React.useState(() => 0)
   // 상대 opponent state
   let (oppBoard, setOppBoard) = React.useState(() => Belt.Array.make(9, None))
-  let (waiting, setWaiting) = React.useState(() => false)
-  // opponent hand state for unknown cards
   let (oppHand, setOppHand) = React.useState(() => allCards)
 
+  // game start and player colors
+  let (gameStarted, setGameStarted) = React.useState(() => false)
+  let (playerColor, setPlayerColor) = React.useState(() => "blue")
+  let oppColor = if playerColor == "blue" { "red" } else { "blue" }
+
+  let (waiting, setWaiting) = React.useState(() => false)
+
   // opponent card counts (white=odd, black=even)
-  let oppWhiteCount = Belt.Array.length(Belt.Array.keep(oppHand, c => (mod(c, 2)) == 1))
-  let oppBlackCount = Belt.Array.length(Belt.Array.keep(oppHand, c => (mod(c, 2)) == 0))
+  let oppWhiteCount =
+    oppHand
+    -> Belt.Array.keep(c => mod(c, 2) == 1)
+    -> Belt.Array.length
+
+  let oppBlackCount =
+    oppHand
+    -> Belt.Array.keep(c => mod(c, 2) == 0)
+    -> Belt.Array.length
 
   // 카드 클릭 핸들러
   let onCardClick = n => {
@@ -47,61 +59,90 @@ let make = () => {
     }
   }
 
-  <main className="flex flex-col items-center p-4">
-    // opponent overview (hidden cards count)
-    <section className="flex flex-row mb-2">
-      <div className="mr-4">
-        {React.string("Opponent: " ++ string_of_int(oppWhiteCount) ++ " white cards")}
-      </div>
-      <div>
-        {React.string(string_of_int(oppBlackCount) ++ " black cards")}
-      </div>
-    </section>
-    // opponent board slots (mirrored)
-    <section className="flex flex-row mb-6">
-      {React.array(
-        Belt.Array.mapWithIndex(oppBoard, (i, cardOpt) =>
-          <BoardSlot
-            round=(i + 1)
-            card=cardOpt
-            // invert each slot (and its number) for opponent view
-            className="transform rotate-180"
-            key={"opp-" ++ string_of_int(i)}
-          />
-        )
-      )}
-    </section>
-    {waiting ?
-      <div className="my-2">{React.string("Waiting for opponent...")}</div>
-    :
-      React.null
-    }
-    // my board slots
-    <section className="flex flex-row mb-6">
-      {React.array(
-        Belt.Array.mapWithIndex(myBoard, (i, cardOpt) =>
-          <BoardSlot
-            round=(i + 1)
-            card=cardOpt
-            className={if i == currentRound { "ring-4 ring-blue-400" } else { "" }}
-            key={string_of_int(i)}
-          />
-        )
-      )}
-    </section>
-    // my hand cards
-    <section className="flex flex-row">
-      {React.array(
-        hand->Belt.Array.map(n =>
-          <Card
-            number=n
-            onClick={() => onCardClick(n)}
-            disabled=false
-            selected=false
-            key={Js.Int.toString(n)}
-          />
-        )
-      )}
-    </section>
-  </main>
+  // Game start UI
+  if !gameStarted {
+    <div className="flex flex-col items-center p-4">
+      <button
+        className="m-2 px-4 py-2 bg-blue-500 text-white rounded"
+        onClick={_ => { setPlayerColor((_) => "blue"); setGameStarted((_) => true) }}>
+        {React.string("Play as Blue")}
+      </button>
+      <button
+        className="m-2 px-4 py-2 bg-red-500 text-white rounded"
+        onClick={_ => { setPlayerColor((_) => "red"); setGameStarted((_) => true) }}>
+        {React.string("Play as Red")}
+      </button>
+    </div>
+  } else {
+    <main className="flex flex-col items-center p-4">
+      // opponent overview (hidden cards count)
+      <section className="flex flex-row mb-2">
+        <div className="mr-4">
+          {React.string("Opponent: " ++ string_of_int(oppWhiteCount) ++ " white cards")}
+        </div>
+        <div>
+          {React.string(string_of_int(oppBlackCount) ++ " black cards")}
+        </div>
+      </section>
+      // opponent board slots (mirrored)
+      <section className="flex flex-row mb-6">
+        {React.array(
+          Belt.Array.mapWithIndex(oppBoard, (i, cardOpt) =>
+            <BoardSlot
+              round=(i + 1)
+              card=cardOpt
+              // invert each slot (and its number) for opponent view
+              className="transform rotate-180"
+              teamColor=oppColor
+              key={"opp-" ++ string_of_int(i)}
+            />
+          )
+        )}
+      </section>
+      {waiting ?
+        <div className="my-2">{React.string("Waiting for opponent...")}</div>
+      :
+        React.null
+      }
+      // my board slots
+      <section className="flex flex-row mb-6">
+        {React.array(
+          Belt.Array.mapWithIndex(myBoard, (i, cardOpt) =>
+            <BoardSlot
+              round=(i + 1)
+              card=cardOpt
+              className={
+                if i == currentRound {
+                  if playerColor == "blue" {
+                    "ring-4 ring-blue-400"
+                  } else {
+                    "ring-4 ring-red-400"
+                  }
+                } else {
+                  ""
+                }
+              }
+              teamColor=playerColor
+              key={string_of_int(i)}
+            />
+          )
+        )}
+      </section>
+      // my hand cards
+      <section className="flex flex-row">
+        {React.array(
+          hand->Belt.Array.map(n =>
+            <Card
+              number=n
+              onClick={() => onCardClick(n)}
+              disabled=false
+              selected=false
+              teamColor=playerColor
+              key={Js.Int.toString(n)}
+            />
+          )
+        )}
+      </section>
+    </main>
+  }
 }
