@@ -33,8 +33,31 @@ function App(props) {
         return false;
       });
   var setWaiting = match$4[1];
+  var match$5 = React.useState(function () {
+        return allCards;
+      });
+  var setOppHand = match$5[1];
+  var oppHand = match$5[0];
+  var oppWhiteCount = Belt_Array.keep(oppHand, (function (c) {
+          return c % 2 === 1;
+        })).length;
+  var oppBlackCount = Belt_Array.keep(oppHand, (function (c) {
+          return c % 2 === 0;
+        })).length;
   return JsxRuntime.jsxs("main", {
               children: [
+                JsxRuntime.jsxs("section", {
+                      children: [
+                        JsxRuntime.jsx("div", {
+                              children: "Opponent: " + String(oppWhiteCount) + " white cards",
+                              className: "mr-4"
+                            }),
+                        JsxRuntime.jsx("div", {
+                              children: String(oppBlackCount) + " black cards"
+                            })
+                      ],
+                      className: "flex flex-row mb-2"
+                    }),
                 JsxRuntime.jsx("section", {
                       children: Belt_Array.mapWithIndex(match$3[0], (function (i, cardOpt) {
                               return JsxRuntime.jsx(BoardSlot.make, {
@@ -87,6 +110,11 @@ function App(props) {
                                                               var newBoard = prev.slice(0);
                                                               Belt_Array.set(newBoard, currentRound, n);
                                                               return newBoard;
+                                                            });
+                                                        setOppHand(function (prev) {
+                                                              return Belt_Array.keep(prev, (function (c) {
+                                                                            return c !== n;
+                                                                          }));
                                                             });
                                                         setWaiting(function (param) {
                                                               return false;

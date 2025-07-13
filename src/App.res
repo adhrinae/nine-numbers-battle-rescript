@@ -8,6 +8,12 @@ let make = () => {
   // 상대 opponent state
   let (oppBoard, setOppBoard) = React.useState(() => Belt.Array.make(9, None))
   let (waiting, setWaiting) = React.useState(() => false)
+  // opponent hand state for unknown cards
+  let (oppHand, setOppHand) = React.useState(() => allCards)
+
+  // opponent card counts (white=odd, black=even)
+  let oppWhiteCount = Belt.Array.length(Belt.Array.keep(oppHand, c => (mod(c, 2)) == 1))
+  let oppBlackCount = Belt.Array.length(Belt.Array.keep(oppHand, c => (mod(c, 2)) == 0))
 
   // 카드 클릭 핸들러
   let onCardClick = n => {
@@ -33,6 +39,8 @@ let make = () => {
           ignore(Belt.Array.set(newBoard, roundIndex, Some(n)))
           newBoard
         })
+        // remove card from opponent hand
+        setOppHand(prev => Belt.Array.keep(prev, c => c != n))
         setWaiting((_) => false)
       }, 3000))
     | _ => ()
@@ -40,6 +48,15 @@ let make = () => {
   }
 
   <main className="flex flex-col items-center p-4">
+    // opponent overview (hidden cards count)
+    <section className="flex flex-row mb-2">
+      <div className="mr-4">
+        {React.string("Opponent: " ++ string_of_int(oppWhiteCount) ++ " white cards")}
+      </div>
+      <div>
+        {React.string(string_of_int(oppBlackCount) ++ " black cards")}
+      </div>
+    </section>
     // opponent board slots (mirrored)
     <section className="flex flex-row mb-6">
       {React.array(
