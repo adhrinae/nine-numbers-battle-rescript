@@ -7,6 +7,7 @@ import * as Js_dict from "rescript/lib/es6/js_dict.js";
 import * as Js_json from "rescript/lib/es6/js_json.js";
 import * as BoardSlot from "./components/BoardSlot.res.mjs";
 import * as Belt_Array from "rescript/lib/es6/belt_Array.js";
+import * as Js_promise from "rescript/lib/es6/js_promise.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as JsxRuntime from "react/jsx-runtime";
@@ -75,6 +76,7 @@ function App(props) {
         return "";
       });
   var setLocalId = match$10[1];
+  var localId = match$10[0];
   var match$11 = React.useState(function () {
         return "";
       });
@@ -115,6 +117,10 @@ function App(props) {
       });
   var setMyTeam = match$18[1];
   var myTeam = match$18[0];
+  var match$19 = React.useState(function () {
+        return false;
+      });
+  var setCopied = match$19[1];
   React.useEffect((function () {
           peer.on("open", (function (id) {
                   setLocalId(function (param) {
@@ -302,8 +308,34 @@ function App(props) {
     }
     return JsxRuntime.jsxs("div", {
                 children: [
-                  JsxRuntime.jsx("div", {
-                        children: "Your ID: " + match$10[0]
+                  JsxRuntime.jsxs("div", {
+                        children: [
+                          JsxRuntime.jsx("span", {
+                                children: "Your ID: " + localId
+                              }),
+                          JsxRuntime.jsx("button", {
+                                children: "복사",
+                                className: "px-2 py-1 bg-gray-200 rounded text-xs",
+                                onClick: (function (param) {
+                                    Js_promise.then_((function () {
+                                            setCopied(function (param) {
+                                                  return true;
+                                                });
+                                            setTimeout((function () {
+                                                    setCopied(function (param) {
+                                                          return false;
+                                                        });
+                                                  }), 1200);
+                                            return Promise.resolve();
+                                          }), navigator.clipboard.writeText(localId));
+                                  })
+                              }),
+                          match$19[0] ? JsxRuntime.jsx("span", {
+                                  children: "복사됨!",
+                                  className: "text-green-500 text-xs ml-2"
+                                }) : null
+                        ],
+                        className: "flex items-center space-x-2"
                       }),
                   JsxRuntime.jsx("div", {
                         children: "이 ID를 친구에게 공유하세요."
@@ -333,7 +365,8 @@ function App(props) {
                             setConnStatus(function (param) {
                                   return "연결 중...";
                                 });
-                            var c = peer.connect(remoteIdInput);
+                            var trimmedId = remoteIdInput.trim();
+                            var c = peer.connect(trimmedId);
                             setConn(function (param) {
                                   return Caml_option.some(c);
                                 });

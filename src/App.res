@@ -1,3 +1,6 @@
+@val @scope(("navigator", "clipboard"))
+external writeText: string => Js.Promise.t<unit> = "writeText"
+
 @react.component
 let make = () => {
   // 전체 카드 생성 및 상태 초기화
@@ -85,6 +88,18 @@ let make = () => {
     | _ => ()
     }
   }
+  
+  // 호스트 ID 복사 핸들러
+  let handleCopyId = (id, setCopied) => {
+    ignore(
+      writeText(id)
+      |>Js.Promise.then_(_ => {
+        setCopied(_ => true);
+        ignore(Js.Global.setTimeout(() => setCopied(_ => false), 1200));
+        Js.Promise.resolve();
+      })
+    )
+  }
 
   // PeerJS network setup
   module P = PeerJs
@@ -98,6 +113,7 @@ let make = () => {
   let (myRand, setMyRand) = React.useState(() => None)
   let (oppRand, setOppRand) = React.useState(() => None)
   let (myTeam, setMyTeam) = React.useState(() => None)
+  let (copied, setCopied) = React.useState(() => false)
 
   React.useEffect0(() => {
     P.onOpen(peer, "open", id => setLocalId(_ => id))
@@ -192,7 +208,11 @@ let make = () => {
     </div>
   } else if role == "host" && conn == None {
     <div className="flex flex-col items-center p-4">
-      <div>{React.string("Your ID: " ++ localId)}</div>
+      <div className="flex items-center space-x-2">
+        <span>{React.string("Your ID: " ++ localId)}</span>
+        <button className="px-2 py-1 bg-gray-200 rounded text-xs" onClick={_ => handleCopyId(localId, setCopied)}>{React.string("복사")}</button>
+        {copied ? <span className="text-green-500 text-xs ml-2">{React.string("복사됨!")}</span> : React.null}
+      </div>
       <div>{React.string("이 ID를 친구에게 공유하세요.")}</div>
       {switch incomingConn {
       | Some(c) =>
@@ -222,7 +242,8 @@ let make = () => {
       }) }} placeholder="방장 ID 입력" />
       <button className="m-2 px-4 py-2 bg-blue-500 text-white rounded" onClick={_ => {
         setConnStatus(_ => "연결 중...");
-        let c = P.connect(peer, remoteIdInput);
+        let trimmedId = Js.String.trim(remoteIdInput);
+        let c = P.connect(peer, trimmedId);
         setConn(_ => Some(c));
         P.onConnOpen(c, "open", () => {
           setConnStatus(_ => "Connected!");
