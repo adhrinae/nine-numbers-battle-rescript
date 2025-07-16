@@ -18,7 +18,7 @@ type dataConnection
 @send external connect: (peer, string) => dataConnection = "connect"
 
 // Send data over a connection
-external send: (dataConnection, 'a) => unit = "send"
+@send external send: (dataConnection, 'a) => unit = "send"
 
 // Event listeners
 // Use correct callback signatures for PeerJS events

@@ -95,6 +95,9 @@ let make = () => {
   let (conn, setConn) = React.useState(() => None)
   let (connStatus, setConnStatus) = React.useState(() => "")
   let (role, setRole) = React.useState(() => "")
+  let (myRand, setMyRand) = React.useState(() => None)
+  let (oppRand, setOppRand) = React.useState(() => None)
+  let (myTeam, setMyTeam) = React.useState(() => None)
 
   React.useEffect0(() => {
     P.onOpen(peer, "open", id => setLocalId(_ => id))
@@ -102,6 +105,84 @@ let make = () => {
     P.onConnection(peer, "connection", c => setIncomingConn(_ => Some(c)))
     None
   })
+
+  // PeerJS 데이터 송수신: 항상 객체로만 처리
+  // send: 랜덤값 보낼 때
+  let sendRand = (c, rand) => {
+    let obj = Js.Dict.empty();
+    Js.Dict.set(obj, "type", Js.Json.string("rand"));
+    Js.Dict.set(obj, "rand", Js.Json.number(float_of_int(rand)));
+    P.send(c, Js.Json.object_(obj));
+  }
+  // send: 팀 정보 보낼 때
+  let sendTeam = (c, team, rand) => {
+    let obj = Js.Dict.empty();
+    Js.Dict.set(obj, "type", Js.Json.string("team"));
+    Js.Dict.set(obj, "team", Js.Json.string(team));
+    Js.Dict.set(obj, "rand", Js.Json.number(float_of_int(rand)));
+    P.send(c, Js.Json.object_(obj));
+  }
+
+  // 팀 결정 useEffect (deps를 튜플로 전달, 구조분해)
+  React.useEffect(() => {
+    if (myTeam == None && oppRand != None && myRand != None) {
+      let myR = Belt.Option.getExn(myRand)
+      let oppR = Belt.Option.getExn(oppRand)
+      let isHost = role == "host"
+      let isMyTurn = (isHost && myR >= oppR) || (!isHost && myR > oppR)
+      if (isMyTurn) {
+        let team = if myR > oppR { "red" } else { "blue" }
+        setMyTeam(_ => Some(team));
+        switch conn {
+        | Some(c) => sendTeam(c, team, myR)
+        | None => ()
+        }
+      }
+    }
+    None
+  }, (myTeam, myRand, oppRand, role, conn))
+
+  // Listen for all PeerJS data (객체 기반)
+  React.useEffect(() => {
+    switch conn {
+    | Some(c) =>
+      P.onData(c, "data", data => {
+        switch Js.Json.decodeObject(data) {
+        | Some(obj) =>
+            switch Js.Dict.get(obj, "type") {
+            | Some(Js.Json.String("rand")) =>
+                switch Js.Dict.get(obj, "rand") {
+                | Some(Js.Json.Number(n)) => {
+                    setOppRand(_ => Some(int_of_float(n)))
+                  }
+                | _ => ()
+                }
+            | Some(Js.Json.String("team")) => {
+                let teamOpt = Js.Dict.get(obj, "team")
+                let randOpt = Js.Dict.get(obj, "rand")
+                switch (teamOpt, randOpt) {
+                | (Some(Js.Json.String(_team)), Some(Js.Json.Number(n))) => {
+                    setOppRand(_ => Some(int_of_float(n)))
+                    // 내 팀은 내 myRand와 받은 n(oppRand)로 직접 계산
+                    switch myRand {
+                    | Some(myR) =>
+                        let team = if myR > int_of_float(n) { "red" } else { "blue" }
+                        setMyTeam(_ => Some(team))
+                    | None => ()
+                    }
+                  }
+                | _ => ()
+                }
+              }
+            | _ => ()
+            }
+        | None => ()
+        }
+      })
+    | None => ()
+    }
+    None
+  }, [conn])
 
   // UI flow: select host/join, handle connection, then choose color, then game
   if role == "" {
@@ -117,7 +198,12 @@ let make = () => {
       | Some(c) =>
         <div className="mt-4">
           {React.string("Peer 연결 요청이 도착했습니다. 수락하시겠습니까?")}
-          <button className="m-2 px-4 py-2 bg-blue-500 text-white rounded" onClick={_ => { setConn(_=>Some(c)); setConnStatus(_=>"Connected!"); }}>
+          <button className="m-2 px-4 py-2 bg-blue-500 text-white rounded" onClick={_ => {
+            setConn(_=>Some(c)); setConnStatus(_=>"Connected!");
+            let rand = int_of_float(Js.Math.random() *. 100000.0)
+            setMyRand(_ => Some(rand));
+            sendRand(c, rand); // rand 직접 전달
+          }}>
             {React.string("예")}
           </button>
           <button className="m-2 px-4 py-2 bg-gray-300 rounded" onClick={_ => setIncomingConn(_=>None)}>
@@ -138,7 +224,12 @@ let make = () => {
         setConnStatus(_ => "연결 중...");
         let c = P.connect(peer, remoteIdInput);
         setConn(_ => Some(c));
-        P.onConnOpen(c, "open", () => setConnStatus(_ => "Connected!"));
+        P.onConnOpen(c, "open", () => {
+          setConnStatus(_ => "Connected!");
+          let rand = int_of_float(Js.Math.random() *. 100000.0)
+          setMyRand(_ => Some(rand));
+          sendRand(c, rand); // rand 직접 전달
+        });
         P.onConnError(c, "error", err => setConnStatus(_ => "연결 실패: " ++ Js.Json.stringify(err)));
       }}>
         {React.string("연결")}
@@ -147,11 +238,20 @@ let make = () => {
     </div>
   } else if conn == None {
     <div className="flex items-center p-4">{React.string("연결 상태: " ++ connStatus)}</div>
-  } else if !gameStarted {
-    // after successful connection, choose color
+  } else if oppRand == None || myRand == None {
     <div className="flex flex-col items-center p-4">
-      <button className="m-2 px-4 py-2 bg-blue-500 text-white rounded" onClick={_ => { setPlayerColor(_ => "blue"); setGameStarted(_ => true) }}>{React.string("Play as Blue")}</button>
-      <button className="m-2 px-4 py-2 bg-red-500 text-white rounded" onClick={_ => { setPlayerColor(_ => "red"); setGameStarted(_ => true) }}>{React.string("Play as Red")}</button>
+      {React.string("팀 결정 중...")}
+    </div>
+  } else if myTeam == None && oppRand != None && myRand != None {
+    // 팀 결정 로직는 useEffect로 이동, 여기선 UI만 표시
+    <div className="flex flex-col items-center p-4">
+      {React.string("팀 결정 중...")}
+    </div>
+  } else if myTeam != None && !gameStarted {
+    let team = Belt.Option.getExn(myTeam)
+    <div className="flex flex-col items-center p-4">
+      <div>{React.string("당신은 " ++ (if team == "red" { "Red" } else { "Blue" }) ++ " 팀입니다.")}</div>
+      <button className={"m-2 px-4 py-2 rounded " ++ (if team == "red" { "bg-red-500 text-white" } else { "bg-blue-500 text-white" })} onClick={_ => { setPlayerColor(_ => team); setGameStarted(_ => true) }}>{React.string("게임 시작")}</button>
     </div>
   } else {
     <main className="flex flex-col items-center p-4">

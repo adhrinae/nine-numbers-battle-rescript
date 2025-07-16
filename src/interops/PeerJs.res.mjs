@@ -14,8 +14,8 @@ function connect(prim0, prim1) {
   return prim0.connect(prim1);
 }
 
-function send$1(prim0, prim1) {
-  send(prim0, prim1);
+function send(prim0, prim1) {
+  prim0.send(prim1);
 }
 
 function onOpen(prim0, prim1, prim2) {
@@ -50,7 +50,7 @@ var PeerJs = {
   makePeerNew: makePeerNew,
   makePeerWithIdNew: makePeerWithIdNew,
   connect: connect,
-  send: send$1,
+  send: send,
   onOpen: onOpen,
   onConnection: onConnection,
   onData: onData,
