@@ -86,19 +86,72 @@ let make = () => {
     }
   }
 
-  // Game start UI
-  if !gameStarted {
+  // PeerJS network setup
+  module P = PeerJs
+  let peer = React.useMemo0(() => P.makePeerNew(Js.Obj.empty()))
+  let (localId, setLocalId) = React.useState(() => "")
+  let (remoteIdInput, setRemoteIdInput) = React.useState(() => "")
+  let (incomingConn, setIncomingConn) = React.useState(() => None)
+  let (conn, setConn) = React.useState(() => None)
+  let (connStatus, setConnStatus) = React.useState(() => "")
+  let (role, setRole) = React.useState(() => "")
+
+  React.useEffect0(() => {
+    P.onOpen(peer, "open", id => setLocalId(_ => id))
+    P.onError(peer, "error", err => setConnStatus(_ => "Error: " ++ Js.Json.stringify(err)))
+    P.onConnection(peer, "connection", c => setIncomingConn(_ => Some(c)))
+    None
+  })
+
+  // UI flow: select host/join, handle connection, then choose color, then game
+  if role == "" {
     <div className="flex flex-col items-center p-4">
-      <button
-        className="m-2 px-4 py-2 bg-blue-500 text-white rounded"
-        onClick={_ => { setPlayerColor((_) => "blue"); setGameStarted((_) => true) }}>
-        {React.string("Play as Blue")}
+      <button className="m-2 px-4 py-2 bg-green-500 text-white rounded" onClick={_ => setRole(_ => "host")}>{React.string("새 게임 시작")}</button>
+      <button className="m-2 px-4 py-2 bg-purple-500 text-white rounded" onClick={_ => setRole(_ => "join")}>{React.string("게임 참여")}</button>
+    </div>
+  } else if role == "host" && conn == None {
+    <div className="flex flex-col items-center p-4">
+      <div>{React.string("Your ID: " ++ localId)}</div>
+      <div>{React.string("이 ID를 친구에게 공유하세요.")}</div>
+      {switch incomingConn {
+      | Some(c) =>
+        <div className="mt-4">
+          {React.string("Peer 연결 요청이 도착했습니다. 수락하시겠습니까?")}
+          <button className="m-2 px-4 py-2 bg-blue-500 text-white rounded" onClick={_ => { setConn(_=>Some(c)); setConnStatus(_=>"Connected!"); }}>
+            {React.string("예")}
+          </button>
+          <button className="m-2 px-4 py-2 bg-gray-300 rounded" onClick={_ => setIncomingConn(_=>None)}>
+            {React.string("아니오")}
+          </button>
+        </div>
+      | None => React.null
+      }}
+    </div>
+  } else if role == "join" && conn == None {
+    <div className="flex flex-col items-center p-4">
+      <input className="border p-2" value=remoteIdInput onChange={e => { setRemoteIdInput(_ => {
+        let target = ReactEvent.Form.target(e);
+        let value = target["value"];
+        value
+      }) }} placeholder="방장 ID 입력" />
+      <button className="m-2 px-4 py-2 bg-blue-500 text-white rounded" onClick={_ => {
+        setConnStatus(_ => "연결 중...");
+        let c = P.connect(peer, remoteIdInput);
+        setConn(_ => Some(c));
+        P.onConnOpen(c, "open", () => setConnStatus(_ => "Connected!"));
+        P.onConnError(c, "error", err => setConnStatus(_ => "연결 실패: " ++ Js.Json.stringify(err)));
+      }}>
+        {React.string("연결")}
       </button>
-      <button
-        className="m-2 px-4 py-2 bg-red-500 text-white rounded"
-        onClick={_ => { setPlayerColor((_) => "red"); setGameStarted((_) => true) }}>
-        {React.string("Play as Red")}
-      </button>
+      <div>{React.string(connStatus)}</div>
+    </div>
+  } else if conn == None {
+    <div className="flex items-center p-4">{React.string("연결 상태: " ++ connStatus)}</div>
+  } else if !gameStarted {
+    // after successful connection, choose color
+    <div className="flex flex-col items-center p-4">
+      <button className="m-2 px-4 py-2 bg-blue-500 text-white rounded" onClick={_ => { setPlayerColor(_ => "blue"); setGameStarted(_ => true) }}>{React.string("Play as Blue")}</button>
+      <button className="m-2 px-4 py-2 bg-red-500 text-white rounded" onClick={_ => { setPlayerColor(_ => "red"); setGameStarted(_ => true) }}>{React.string("Play as Red")}</button>
     </div>
   } else {
     <main className="flex flex-col items-center p-4">
