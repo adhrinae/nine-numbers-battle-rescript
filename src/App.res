@@ -1,3 +1,5 @@
+open GameNetwork
+
 @val @scope(("navigator", "clipboard"))
 external writeText: string => Js.Promise.t<unit> = "writeText"
 
@@ -102,8 +104,7 @@ let make = () => {
   }
 
   // PeerJS network setup
-  module P = PeerJs
-  let peer = React.useMemo0(() => P.makePeerNew(Js.Obj.empty()))
+  let peer = React.useMemo0(() => makePeer())
   let (localId, setLocalId) = React.useState(() => "")
   let (remoteIdInput, setRemoteIdInput) = React.useState(() => "")
   let (incomingConn, setIncomingConn) = React.useState(() => None)
@@ -116,28 +117,11 @@ let make = () => {
   let (copied, setCopied) = React.useState(() => false)
 
   React.useEffect0(() => {
-    P.onOpen(peer, "open", id => setLocalId(_ => id))
-    P.onError(peer, "error", err => setConnStatus(_ => "Error: " ++ Js.Json.stringify(err)))
-    P.onConnection(peer, "connection", c => setIncomingConn(_ => Some(c)))
+    onOpen(peer, id => setLocalId(_ => id))
+    onError(peer, err => setConnStatus(_ => "Error: " ++ Js.Json.stringify(err)))
+    onConnection(peer, c => setIncomingConn(_ => Some(c)))
     None
   })
-
-  // PeerJS 데이터 송수신: 항상 객체로만 처리
-  // send: 랜덤값 보낼 때
-  let sendRand = (c, rand) => {
-    let obj = Js.Dict.empty();
-    Js.Dict.set(obj, "type", Js.Json.string("rand"));
-    Js.Dict.set(obj, "rand", Js.Json.number(float_of_int(rand)));
-    P.send(c, Js.Json.object_(obj));
-  }
-  // send: 팀 정보 보낼 때
-  let sendTeam = (c, team, rand) => {
-    let obj = Js.Dict.empty();
-    Js.Dict.set(obj, "type", Js.Json.string("team"));
-    Js.Dict.set(obj, "team", Js.Json.string(team));
-    Js.Dict.set(obj, "rand", Js.Json.number(float_of_int(rand)));
-    P.send(c, Js.Json.object_(obj));
-  }
 
   // 팀 결정 useEffect (deps를 튜플로 전달, 구조분해)
   React.useEffect(() => {
@@ -162,37 +146,19 @@ let make = () => {
   React.useEffect(() => {
     switch conn {
     | Some(c) =>
-      P.onData(c, "data", data => {
-        switch Js.Json.decodeObject(data) {
-        | Some(obj) =>
-            switch Js.Dict.get(obj, "type") {
-            | Some(Js.Json.String("rand")) =>
-                switch Js.Dict.get(obj, "rand") {
-                | Some(Js.Json.Number(n)) => {
-                    setOppRand(_ => Some(int_of_float(n)))
-                  }
-                | _ => ()
-                }
-            | Some(Js.Json.String("team")) => {
-                let teamOpt = Js.Dict.get(obj, "team")
-                let randOpt = Js.Dict.get(obj, "rand")
-                switch (teamOpt, randOpt) {
-                | (Some(Js.Json.String(_team)), Some(Js.Json.Number(n))) => {
-                    setOppRand(_ => Some(int_of_float(n)))
-                    // 내 팀은 내 myRand와 받은 n(oppRand)로 직접 계산
-                    switch myRand {
-                    | Some(myR) =>
-                        let team = if myR > int_of_float(n) { "red" } else { "blue" }
-                        setMyTeam(_ => Some(team))
-                    | None => ()
-                    }
-                  }
-                | _ => ()
-                }
-              }
-            | _ => ()
+      onData(c, event => {
+        switch event {
+        | Rand(n) => setOppRand(_ => Some(n))
+        | Team(team, n) => {
+            setOppRand(_ => Some(n))
+            switch myRand {
+            | Some(myR) =>
+                let t = if myR > n { "red" } else { "blue" }
+                setMyTeam(_ => Some(t))
+            | None => ()
             }
-        | None => ()
+          }
+        | Other(_) => ()
         }
       })
     | None => ()
@@ -243,15 +209,15 @@ let make = () => {
       <button className="m-2 px-4 py-2 bg-blue-500 text-white rounded" onClick={_ => {
         setConnStatus(_ => "연결 중...");
         let trimmedId = Js.String.trim(remoteIdInput);
-        let c = P.connect(peer, trimmedId);
+        let c = connect(peer, trimmedId);
         setConn(_ => Some(c));
-        P.onConnOpen(c, "open", () => {
+        onConnOpen(c, () => {
           setConnStatus(_ => "Connected!");
           let rand = int_of_float(Js.Math.random() *. 100000.0)
           setMyRand(_ => Some(rand));
           sendRand(c, rand); // rand 직접 전달
         });
-        P.onConnError(c, "error", err => setConnStatus(_ => "연결 실패: " ++ Js.Json.stringify(err)));
+        onConnError(c, err => setConnStatus(_ => "연결 실패: " ++ Js.Json.stringify(err)));
       }}>
         {React.string("연결")}
       </button>

@@ -2,14 +2,12 @@
 
 import * as Card from "./components/Card.res.mjs";
 import * as React from "react";
-import Peerjs from "peerjs";
-import * as Js_dict from "rescript/lib/es6/js_dict.js";
-import * as Js_json from "rescript/lib/es6/js_json.js";
 import * as BoardSlot from "./components/BoardSlot.res.mjs";
 import * as Belt_Array from "rescript/lib/es6/belt_Array.js";
 import * as Js_promise from "rescript/lib/es6/js_promise.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
+import * as GameNetwork from "./interops/GameNetwork.res.mjs";
 import * as JsxRuntime from "react/jsx-runtime";
 
 function App(props) {
@@ -70,7 +68,7 @@ function App(props) {
           return c % 2 === 0;
         })).length;
   var peer = React.useMemo((function () {
-          return new Peerjs({});
+          return GameNetwork.makePeer();
         }), []);
   var match$10 = React.useState(function () {
         return "";
@@ -122,35 +120,22 @@ function App(props) {
       });
   var setCopied = match$19[1];
   React.useEffect((function () {
-          peer.on("open", (function (id) {
+          GameNetwork.onOpen(peer, (function (id) {
                   setLocalId(function (param) {
                         return id;
                       });
                 }));
-          peer.on("error", (function (err) {
+          GameNetwork.onError(peer, (function (err) {
                   setConnStatus(function (param) {
                         return "Error: " + JSON.stringify(err);
                       });
                 }));
-          peer.on("connection", (function (c) {
+          GameNetwork.onConnection(peer, (function (c) {
                   setIncomingConn(function (param) {
                         return Caml_option.some(c);
                       });
                 }));
         }), []);
-  var sendRand = function (c, rand) {
-    var obj = {};
-    obj["type"] = "rand";
-    obj["rand"] = rand;
-    c.send(obj);
-  };
-  var sendTeam = function (c, team, rand) {
-    var obj = {};
-    obj["type"] = "team";
-    obj["team"] = team;
-    obj["rand"] = rand;
-    c.send(obj);
-  };
   React.useEffect((function () {
           if (myTeam === undefined && oppRand !== undefined && myRand !== undefined) {
             var myR = Belt_Option.getExn(myRand);
@@ -163,7 +148,7 @@ function App(props) {
                     return team;
                   });
               if (conn !== undefined) {
-                sendTeam(Caml_option.valFromOption(conn), team, myR);
+                GameNetwork.sendTeam(Caml_option.valFromOption(conn), team, myR);
               }
               
             }
@@ -179,64 +164,28 @@ function App(props) {
       ]);
   React.useEffect((function () {
           if (conn !== undefined) {
-            Caml_option.valFromOption(conn).on("data", (function (data) {
-                    var obj = Js_json.decodeObject(data);
-                    if (obj === undefined) {
-                      return ;
-                    }
-                    var match = Js_dict.get(obj, "type");
-                    if (match === undefined) {
-                      return ;
-                    }
-                    if (!Array.isArray(match) && (match === null || typeof match !== "object") && typeof match !== "number" && typeof match !== "string" && typeof match !== "boolean") {
-                      return ;
-                    }
-                    if (typeof match !== "string") {
-                      return ;
-                    }
-                    switch (match) {
-                      case "rand" :
-                          var match$1 = Js_dict.get(obj, "rand");
-                          if (match$1 !== undefined && !(!Array.isArray(match$1) && (match$1 === null || typeof match$1 !== "object") && typeof match$1 !== "number" && typeof match$1 !== "string" && typeof match$1 !== "boolean" || typeof match$1 !== "number")) {
-                            return setOppRand(function (param) {
-                                        return match$1 | 0;
-                                      });
-                          } else {
-                            return ;
-                          }
-                      case "team" :
-                          var teamOpt = Js_dict.get(obj, "team");
-                          var randOpt = Js_dict.get(obj, "rand");
-                          if (teamOpt === undefined) {
-                            return ;
-                          }
-                          if (!Array.isArray(teamOpt) && (teamOpt === null || typeof teamOpt !== "object") && typeof teamOpt !== "number" && typeof teamOpt !== "string" && typeof teamOpt !== "boolean") {
-                            return ;
-                          }
-                          if (typeof teamOpt !== "string") {
-                            return ;
-                          }
-                          if (randOpt === undefined) {
-                            return ;
-                          }
-                          if (!Array.isArray(randOpt) && (randOpt === null || typeof randOpt !== "object") && typeof randOpt !== "number" && typeof randOpt !== "string" && typeof randOpt !== "boolean") {
-                            return ;
-                          }
-                          if (typeof randOpt !== "number") {
-                            return ;
-                          }
+            GameNetwork.onData(Caml_option.valFromOption(conn), (function ($$event) {
+                    switch ($$event.TAG) {
+                      case "Rand" :
+                          var n = $$event._0;
+                          return setOppRand(function (param) {
+                                      return n;
+                                    });
+                      case "Team" :
+                          var n$1 = $$event._1;
                           setOppRand(function (param) {
-                                return randOpt | 0;
+                                return n$1;
                               });
                           if (myRand === undefined) {
                             return ;
                           }
-                          var team = myRand > (randOpt | 0) ? "red" : "blue";
+                          var t = myRand > n$1 ? "red" : "blue";
                           return setMyTeam(function (param) {
-                                      return team;
+                                      return t;
                                     });
-                      default:
-                        return ;
+                      case "Other" :
+                          return ;
+                      
                     }
                   }));
           }
@@ -288,7 +237,7 @@ function App(props) {
                         setMyRand(function (param) {
                               return rand;
                             });
-                        sendRand(c, rand);
+                        GameNetwork.sendRand(c, rand);
                       })
                   }),
               JsxRuntime.jsx("button", {
@@ -366,11 +315,11 @@ function App(props) {
                                   return "연결 중...";
                                 });
                             var trimmedId = remoteIdInput.trim();
-                            var c = peer.connect(trimmedId);
+                            var c = GameNetwork.connect(peer, trimmedId);
                             setConn(function (param) {
                                   return Caml_option.some(c);
                                 });
-                            c.on("open", (function () {
+                            GameNetwork.onConnOpen(c, (function () {
                                     setConnStatus(function (param) {
                                           return "Connected!";
                                         });
@@ -378,9 +327,9 @@ function App(props) {
                                     setMyRand(function (param) {
                                           return rand;
                                         });
-                                    sendRand(c, rand);
+                                    GameNetwork.sendRand(c, rand);
                                   }));
-                            c.on("error", (function (err) {
+                            GameNetwork.onConnError(c, (function (err) {
                                     setConnStatus(function (param) {
                                           return "연결 실패: " + JSON.stringify(err);
                                         });
