@@ -9,6 +9,10 @@ type peer = Js.Json.t
 type event =
   | Rand(int)
   | Team(string, int)
+  | PlayCard(int)
+  | AnnounceWinner(string)
+  | ReadyForNextRound
+  | GameOver(string)
   | Other(Js.Json.t)
 
 // Peer 생성
@@ -42,6 +46,23 @@ let onData = (conn, cb) =>
             | (Some(Js.Json.String(team)), Some(Js.Json.Number(n))) => cb(Team(team, int_of_float(n)))
             | _ => ()
             }
+        | Some(Js.Json.String("playCard")) =>
+            switch Js.Dict.get(obj, "card") {
+            | Some(Js.Json.Number(n)) => cb(PlayCard(int_of_float(n)))
+            | _ => ()
+            }
+        | Some(Js.Json.String("announceWinner")) =>
+            switch Js.Dict.get(obj, "winner") {
+            | Some(Js.Json.String(s)) => cb(AnnounceWinner(s))
+            | _ => ()
+            }
+        | Some(Js.Json.String("readyForNextRound")) =>
+            cb(ReadyForNextRound)
+        | Some(Js.Json.String("gameOver")) =>
+            switch Js.Dict.get(obj, "winner") {
+            | Some(Js.Json.String(s)) => cb(GameOver(s))
+            | _ => ()
+            }
         | _ => cb(Other(data))
         }
     | None => cb(Other(data))
@@ -61,5 +82,32 @@ let sendTeam = (conn, team, rand) => {
   Js.Dict.set(obj, "type", Js.Json.string("team"))
   Js.Dict.set(obj, "team", Js.Json.string(team))
   Js.Dict.set(obj, "rand", Js.Json.number(float_of_int(rand)))
+  P.send(conn, Js.Json.object_(obj))
+}
+
+let sendPlayCard = (conn, card) => {
+  let obj = Js.Dict.empty()
+  Js.Dict.set(obj, "type", Js.Json.string("playCard"))
+  Js.Dict.set(obj, "card", Js.Json.number(float_of_int(card)))
+  P.send(conn, Js.Json.object_(obj))
+}
+
+let sendAnnounceWinner = (conn, winner) => {
+  let obj = Js.Dict.empty()
+  Js.Dict.set(obj, "type", Js.Json.string("announceWinner"))
+  Js.Dict.set(obj, "winner", Js.Json.string(winner))
+  P.send(conn, Js.Json.object_(obj))
+}
+
+let sendReadyForNextRound = conn => {
+  let obj = Js.Dict.empty()
+  Js.Dict.set(obj, "type", Js.Json.string("readyForNextRound"))
+  P.send(conn, Js.Json.object_(obj))
+}
+
+let sendGameOver = (conn, winner) => {
+  let obj = Js.Dict.empty()
+  Js.Dict.set(obj, "type", Js.Json.string("gameOver"))
+  Js.Dict.set(obj, "winner", Js.Json.string(winner))
   P.send(conn, Js.Json.object_(obj))
 }
