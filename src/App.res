@@ -23,6 +23,21 @@ let make = () => {
   let (lastResult, setLastResult) = React.useState(() => "")
   // track each round winner: "You win", "Opponent wins", "Tie"
   let (winners, setWinners) = React.useState(() => Belt.Array.make(9, None))
+  let (oppCard, setOppCard) = React.useState(() => None)
+  let (gameOver, setGameOver) = React.useState(() => None)
+
+  // PeerJS network setup
+  let peer = React.useMemo0(() => makePeer())
+  let (localId, setLocalId) = React.useState(() => "")
+  let (remoteIdInput, setRemoteIdInput) = React.useState(() => "")
+  let (incomingConn, setIncomingConn) = React.useState(() => None)
+  let (conn, setConn) = React.useState(() => None)
+  let (connStatus, setConnStatus) = React.useState(() => "")
+  let (role, setRole) = React.useState(() => "")
+  let (myRand, setMyRand) = React.useState(() => None)
+  let (oppRand, setOppRand) = React.useState(() => None)
+  let (myTeam, setMyTeam) = React.useState(() => None)
+  let (copied, setCopied) = React.useState(() => false)
 
   // opponent card counts (white=odd, black=even)
   let oppWhiteCount =
@@ -37,8 +52,8 @@ let make = () => {
 
   // 카드 클릭 핸들러
   let onCardClick = n => {
-    switch Belt.Array.get(myBoard, currentRound) {
-    | Some(None) =>
+    switch (Belt.Array.get(myBoard, currentRound), conn) {
+    | (Some(None), Some(c)) =>
       // 내가 보드에 카드 제출
       setMyBoard(prevBoard => {
         let newBoard = Belt.Array.copy(prevBoard)
@@ -47,50 +62,14 @@ let make = () => {
       })
       // update hand
       setHand(prevHand => Belt.Array.keep(prevHand, c => c != n))
-      // advance round
-      setCurrentRound(prevRound => prevRound + 1)
+      // send card to opponent
+      sendPlayCard(c, n)
       // opponent 준비 메시지
-      setWaiting((_) => true)
-      let roundIndex = currentRound
-      // 3초 후 opponent 보드에 같은 카드 추가
-      ignore(Js.Global.setTimeout(() => {
-        // opponent plays random card
-        let oppMove = int_of_float(Js.Math.random() *. 9.0) + 1
-        setOppBoard(prev => {
-          let newBoard = Belt.Array.copy(prev)
-          ignore(Belt.Array.set(newBoard, roundIndex, Some(oppMove)))
-          newBoard
-        })
-        // remove card from opponent hand
-        setOppHand(prev => Belt.Array.keep(prev, c => c != oppMove))
-        // determine round result
-        let winnerText =
-          if n == oppMove {
-            "Tie"
-          } else if n == 1 && oppMove == 9 {
-            // 1 beats 9
-            "You win"
-          } else if n == 9 && oppMove == 1 {
-            // 9 loses to 1
-            "Opponent wins"
-          } else if n > oppMove {
-            "You win"
-          } else {
-            "Opponent wins"
-          }
-        setLastResult((_) => winnerText)
-        // record winner for this round
-        setWinners(prev => {
-          let newW = Belt.Array.copy(prev)
-          ignore(Belt.Array.set(newW, roundIndex, Some(winnerText)))
-          newW
-        })
-        setWaiting((_) => false)
-      }, 3000))
+      setWaiting(_ => true)
     | _ => ()
     }
   }
-  
+
   // 호스트 ID 복사 핸들러
   let handleCopyId = (id, setCopied) => {
     ignore(
@@ -102,19 +81,6 @@ let make = () => {
       })
     )
   }
-
-  // PeerJS network setup
-  let peer = React.useMemo0(() => makePeer())
-  let (localId, setLocalId) = React.useState(() => "")
-  let (remoteIdInput, setRemoteIdInput) = React.useState(() => "")
-  let (incomingConn, setIncomingConn) = React.useState(() => None)
-  let (conn, setConn) = React.useState(() => None)
-  let (connStatus, setConnStatus) = React.useState(() => "")
-  let (role, setRole) = React.useState(() => "")
-  let (myRand, setMyRand) = React.useState(() => None)
-  let (oppRand, setOppRand) = React.useState(() => None)
-  let (myTeam, setMyTeam) = React.useState(() => None)
-  let (copied, setCopied) = React.useState(() => false)
 
   React.useEffect0(() => {
     onOpen(peer, id => setLocalId(_ => id))
@@ -142,6 +108,50 @@ let make = () => {
     None
   }, (myTeam, myRand, oppRand, role, conn))
 
+  // 라운드 승자 판정 및 다음 라운드 진행
+  React.useEffect(() => {
+    let myMoveOpt = Belt.Array.get(myBoard, currentRound)
+    let oppMoveOpt = oppCard
+
+    switch (myMoveOpt, oppMoveOpt) {
+    | (Some(Some(myMove)), Some(oppMove)) =>
+      // 승자 판정
+      let winnerText =
+        if myMove == oppMove {
+          "Tie"
+        } else if myMove == 1 && oppMove == 9 {
+          "You win"
+        } else if myMove == 9 && oppMove == 1 {
+          "Opponent wins"
+        } else if myMove > oppMove {
+          "You win"
+        } else {
+          "Opponent wins"
+        }
+      setLastResult(_ => winnerText)
+      setWinners(prev => {
+        let newW = Belt.Array.copy(prev)
+        ignore(Belt.Array.set(newW, currentRound, Some(winnerText)))
+        newW
+      })
+
+      // 상대방 보드 업데이트
+      setOppBoard(prev => {
+        let newBoard = Belt.Array.copy(prev)
+        ignore(Belt.Array.set(newBoard, currentRound, Some(oppMove)))
+        newBoard
+      })
+
+      // 상태 초기화 및 다음 라운드로
+      setOppCard(_ => None)
+      setCurrentRound(prev => prev + 1)
+      setWaiting(_ => false)
+    | _ => ()
+    }
+
+    None
+  }, (myBoard, oppCard))
+
   // Listen for all PeerJS data (객체 기반)
   React.useEffect(() => {
     switch conn {
@@ -149,7 +159,7 @@ let make = () => {
       onData(c, event => {
         switch event {
         | Rand(n) => setOppRand(_ => Some(n))
-        | Team(team, n) => {
+        | Team(_, n) => {
             setOppRand(_ => Some(n))
             switch myRand {
             | Some(myR) =>
@@ -158,13 +168,20 @@ let make = () => {
             | None => ()
             }
           }
+        | PlayCard(card) => {
+            setOppCard(_ => Some(card))
+            setOppHand(prev => Belt.Array.keep(prev, c => c != card))
+          }
+        | AnnounceWinner(winner) => setLastResult(_ => winner)
+        | ReadyForNextRound => setWaiting(_ => false)
+        | GameOver(winner) => setGameOver(_ => Some(winner))
         | Other(_) => ()
         }
       })
     | None => ()
     }
     None
-  }, [conn])
+  }, (conn, myRand))
 
   // UI flow: select host/join, handle connection, then choose color, then game
   if role == "" {
@@ -313,7 +330,7 @@ let make = () => {
             <Card
               number=n
               onClick={() => onCardClick(n)}
-              disabled=false
+              disabled={waiting || Belt.Option.isSome(gameOver)}
               selected=false
               teamColor=playerColor
               key={Js.Int.toString(n)}
@@ -321,6 +338,13 @@ let make = () => {
           )
         )}
       </section>
+      {switch gameOver {
+      | Some(winner) =>
+        <div className="mt-4 text-2xl font-bold">
+          {React.string("Game Over: " ++ winner)}
+        </div>
+      | None => React.null
+      }}
     </main>
   }
 }

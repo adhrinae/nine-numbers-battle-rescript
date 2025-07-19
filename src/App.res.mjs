@@ -51,6 +51,7 @@ function App(props) {
         return false;
       });
   var setWaiting = match$7[1];
+  var waiting = match$7[0];
   var match$8 = React.useState(function () {
         return "";
       });
@@ -61,64 +62,74 @@ function App(props) {
       });
   var setWinners = match$9[1];
   var winners = match$9[0];
+  var match$10 = React.useState(function () {
+        
+      });
+  var setOppCard = match$10[1];
+  var oppCard = match$10[0];
+  var match$11 = React.useState(function () {
+        
+      });
+  var setGameOver = match$11[1];
+  var gameOver = match$11[0];
+  var peer = React.useMemo((function () {
+          return GameNetwork.makePeer();
+        }), []);
+  var match$12 = React.useState(function () {
+        return "";
+      });
+  var setLocalId = match$12[1];
+  var localId = match$12[0];
+  var match$13 = React.useState(function () {
+        return "";
+      });
+  var setRemoteIdInput = match$13[1];
+  var remoteIdInput = match$13[0];
+  var match$14 = React.useState(function () {
+        
+      });
+  var setIncomingConn = match$14[1];
+  var incomingConn = match$14[0];
+  var match$15 = React.useState(function () {
+        
+      });
+  var setConn = match$15[1];
+  var conn = match$15[0];
+  var match$16 = React.useState(function () {
+        return "";
+      });
+  var setConnStatus = match$16[1];
+  var connStatus = match$16[0];
+  var match$17 = React.useState(function () {
+        return "";
+      });
+  var setRole = match$17[1];
+  var role = match$17[0];
+  var match$18 = React.useState(function () {
+        
+      });
+  var setMyRand = match$18[1];
+  var myRand = match$18[0];
+  var match$19 = React.useState(function () {
+        
+      });
+  var setOppRand = match$19[1];
+  var oppRand = match$19[0];
+  var match$20 = React.useState(function () {
+        
+      });
+  var setMyTeam = match$20[1];
+  var myTeam = match$20[0];
+  var match$21 = React.useState(function () {
+        return false;
+      });
+  var setCopied = match$21[1];
   var oppWhiteCount = Belt_Array.keep(oppHand, (function (c) {
           return c % 2 === 1;
         })).length;
   var oppBlackCount = Belt_Array.keep(oppHand, (function (c) {
           return c % 2 === 0;
         })).length;
-  var peer = React.useMemo((function () {
-          return GameNetwork.makePeer();
-        }), []);
-  var match$10 = React.useState(function () {
-        return "";
-      });
-  var setLocalId = match$10[1];
-  var localId = match$10[0];
-  var match$11 = React.useState(function () {
-        return "";
-      });
-  var setRemoteIdInput = match$11[1];
-  var remoteIdInput = match$11[0];
-  var match$12 = React.useState(function () {
-        
-      });
-  var setIncomingConn = match$12[1];
-  var incomingConn = match$12[0];
-  var match$13 = React.useState(function () {
-        
-      });
-  var setConn = match$13[1];
-  var conn = match$13[0];
-  var match$14 = React.useState(function () {
-        return "";
-      });
-  var setConnStatus = match$14[1];
-  var connStatus = match$14[0];
-  var match$15 = React.useState(function () {
-        return "";
-      });
-  var setRole = match$15[1];
-  var role = match$15[0];
-  var match$16 = React.useState(function () {
-        
-      });
-  var setMyRand = match$16[1];
-  var myRand = match$16[0];
-  var match$17 = React.useState(function () {
-        
-      });
-  var setOppRand = match$17[1];
-  var oppRand = match$17[0];
-  var match$18 = React.useState(function () {
-        
-      });
-  var setMyTeam = match$18[1];
-  var myTeam = match$18[0];
-  var match$19 = React.useState(function () {
-        return false;
-      });
-  var setCopied = match$19[1];
   React.useEffect((function () {
           GameNetwork.onOpen(peer, (function (id) {
                   setLocalId(function (param) {
@@ -163,8 +174,51 @@ function App(props) {
         conn
       ]);
   React.useEffect((function () {
+          var myMoveOpt = Belt_Array.get(myBoard, currentRound);
+          if (myMoveOpt !== undefined) {
+            var myMove = Caml_option.valFromOption(myMoveOpt);
+            if (myMove !== undefined && oppCard !== undefined) {
+              var winnerText = myMove === oppCard ? "Tie" : (
+                  myMove === 1 && oppCard === 9 || !(myMove === 9 && oppCard === 1 || myMove <= oppCard) ? "You win" : "Opponent wins"
+                );
+              setLastResult(function (param) {
+                    return winnerText;
+                  });
+              setWinners(function (prev) {
+                    var newW = prev.slice(0);
+                    Belt_Array.set(newW, currentRound, winnerText);
+                    return newW;
+                  });
+              setOppBoard(function (prev) {
+                    var newBoard = prev.slice(0);
+                    Belt_Array.set(newBoard, currentRound, oppCard);
+                    return newBoard;
+                  });
+              setOppCard(function (param) {
+                    
+                  });
+              setCurrentRound(function (prev) {
+                    return prev + 1 | 0;
+                  });
+              setWaiting(function (param) {
+                    return false;
+                  });
+            }
+            
+          }
+          
+        }), [
+        myBoard,
+        oppCard
+      ]);
+  React.useEffect((function () {
           if (conn !== undefined) {
             GameNetwork.onData(Caml_option.valFromOption(conn), (function ($$event) {
+                    if (typeof $$event !== "object") {
+                      return setWaiting(function (param) {
+                                  return false;
+                                });
+                    }
                     switch ($$event.TAG) {
                       case "Rand" :
                           var n = $$event._0;
@@ -183,6 +237,26 @@ function App(props) {
                           return setMyTeam(function (param) {
                                       return t;
                                     });
+                      case "PlayCard" :
+                          var card = $$event._0;
+                          setOppCard(function (param) {
+                                return card;
+                              });
+                          return setOppHand(function (prev) {
+                                      return Belt_Array.keep(prev, (function (c) {
+                                                    return c !== card;
+                                                  }));
+                                    });
+                      case "AnnounceWinner" :
+                          var winner = $$event._0;
+                          return setLastResult(function (param) {
+                                      return winner;
+                                    });
+                      case "GameOver" :
+                          var winner$1 = $$event._0;
+                          return setGameOver(function (param) {
+                                      return winner$1;
+                                    });
                       case "Other" :
                           return ;
                       
@@ -190,7 +264,10 @@ function App(props) {
                   }));
           }
           
-        }), [conn]);
+        }), [
+        conn,
+        myRand
+      ]);
   if (role === "") {
     return JsxRuntime.jsxs("div", {
                 children: [
@@ -279,7 +356,7 @@ function App(props) {
                                           }), navigator.clipboard.writeText(localId));
                                   })
                               }),
-                          match$19[0] ? JsxRuntime.jsx("span", {
+                          match$21[0] ? JsxRuntime.jsx("span", {
                                   children: "복사됨!",
                                   className: "text-green-500 text-xs ml-2"
                                 }) : null
@@ -399,7 +476,7 @@ function App(props) {
                               })),
                         className: "flex flex-row mb-6"
                       }),
-                  match$7[0] ? JsxRuntime.jsx("div", {
+                  waiting ? JsxRuntime.jsx("div", {
                           children: "Waiting for opponent...",
                           className: "my-2"
                         }) : null,
@@ -439,7 +516,7 @@ function App(props) {
                                             number: n,
                                             onClick: (function () {
                                                 var match = Belt_Array.get(myBoard, currentRound);
-                                                if (match !== undefined && Caml_option.valFromOption(match) === undefined) {
+                                                if (match !== undefined && !(Caml_option.valFromOption(match) !== undefined || conn === undefined)) {
                                                   setMyBoard(function (prevBoard) {
                                                         var newBoard = prevBoard.slice(0);
                                                         Belt_Array.set(newBoard, currentRound, n);
@@ -450,50 +527,24 @@ function App(props) {
                                                                       return c !== n;
                                                                     }));
                                                       });
-                                                  setCurrentRound(function (prevRound) {
-                                                        return prevRound + 1 | 0;
-                                                      });
-                                                  setWaiting(function (param) {
-                                                        return true;
-                                                      });
-                                                  setTimeout((function () {
-                                                          var oppMove = (Math.random() * 9.0 | 0) + 1 | 0;
-                                                          setOppBoard(function (prev) {
-                                                                var newBoard = prev.slice(0);
-                                                                Belt_Array.set(newBoard, currentRound, oppMove);
-                                                                return newBoard;
-                                                              });
-                                                          setOppHand(function (prev) {
-                                                                return Belt_Array.keep(prev, (function (c) {
-                                                                              return c !== oppMove;
-                                                                            }));
-                                                              });
-                                                          var winnerText = n === oppMove ? "Tie" : (
-                                                              n === 1 && oppMove === 9 || !(n === 9 && oppMove === 1 || n <= oppMove) ? "You win" : "Opponent wins"
-                                                            );
-                                                          setLastResult(function (param) {
-                                                                return winnerText;
-                                                              });
-                                                          setWinners(function (prev) {
-                                                                var newW = prev.slice(0);
-                                                                Belt_Array.set(newW, currentRound, winnerText);
-                                                                return newW;
-                                                              });
-                                                          setWaiting(function (param) {
-                                                                return false;
-                                                              });
-                                                        }), 3000);
-                                                  return ;
+                                                  GameNetwork.sendPlayCard(Caml_option.valFromOption(conn), n);
+                                                  return setWaiting(function (param) {
+                                                              return true;
+                                                            });
                                                 }
                                                 
                                               }),
                                             selected: false,
-                                            disabled: false,
+                                            disabled: waiting || Belt_Option.isSome(gameOver),
                                             teamColor: playerColor
                                           }, n.toString());
                               })),
                         className: "flex flex-row"
-                      })
+                      }),
+                  gameOver !== undefined ? JsxRuntime.jsx("div", {
+                          children: "Game Over: " + gameOver,
+                          className: "mt-4 text-2xl font-bold"
+                        }) : null
                 ],
                 className: "flex flex-col items-center p-4"
               });

@@ -61,16 +61,48 @@ function onData(conn, cb) {
                       });
           }
           switch (match) {
-            case "rand" :
-                var match$1 = Js_dict.get(obj, "rand");
-                if (match$1 !== undefined && !(!Array.isArray(match$1) && (match$1 === null || typeof match$1 !== "object") && typeof match$1 !== "number" && typeof match$1 !== "string" && typeof match$1 !== "boolean" || typeof match$1 !== "number")) {
+            case "announceWinner" :
+                var match$1 = Js_dict.get(obj, "winner");
+                if (match$1 !== undefined && !(!Array.isArray(match$1) && (match$1 === null || typeof match$1 !== "object") && typeof match$1 !== "number" && typeof match$1 !== "string" && typeof match$1 !== "boolean" || typeof match$1 !== "string")) {
                   return cb({
-                              TAG: "Rand",
-                              _0: match$1 | 0
+                              TAG: "AnnounceWinner",
+                              _0: match$1
                             });
                 } else {
                   return ;
                 }
+            case "gameOver" :
+                var match$2 = Js_dict.get(obj, "winner");
+                if (match$2 !== undefined && !(!Array.isArray(match$2) && (match$2 === null || typeof match$2 !== "object") && typeof match$2 !== "number" && typeof match$2 !== "string" && typeof match$2 !== "boolean" || typeof match$2 !== "string")) {
+                  return cb({
+                              TAG: "GameOver",
+                              _0: match$2
+                            });
+                } else {
+                  return ;
+                }
+            case "playCard" :
+                var match$3 = Js_dict.get(obj, "card");
+                if (match$3 !== undefined && !(!Array.isArray(match$3) && (match$3 === null || typeof match$3 !== "object") && typeof match$3 !== "number" && typeof match$3 !== "string" && typeof match$3 !== "boolean" || typeof match$3 !== "number")) {
+                  return cb({
+                              TAG: "PlayCard",
+                              _0: match$3 | 0
+                            });
+                } else {
+                  return ;
+                }
+            case "rand" :
+                var match$4 = Js_dict.get(obj, "rand");
+                if (match$4 !== undefined && !(!Array.isArray(match$4) && (match$4 === null || typeof match$4 !== "object") && typeof match$4 !== "number" && typeof match$4 !== "string" && typeof match$4 !== "boolean" || typeof match$4 !== "number")) {
+                  return cb({
+                              TAG: "Rand",
+                              _0: match$4 | 0
+                            });
+                } else {
+                  return ;
+                }
+            case "readyForNextRound" :
+                return cb("ReadyForNextRound");
             case "team" :
                 var teamOpt = Js_dict.get(obj, "team");
                 var randOpt = Js_dict.get(obj, "rand");
@@ -107,6 +139,33 @@ function sendTeam(conn, team, rand) {
   conn.send(obj);
 }
 
+function sendPlayCard(conn, card) {
+  var obj = {};
+  obj["type"] = "playCard";
+  obj["card"] = card;
+  conn.send(obj);
+}
+
+function sendAnnounceWinner(conn, winner) {
+  var obj = {};
+  obj["type"] = "announceWinner";
+  obj["winner"] = winner;
+  conn.send(obj);
+}
+
+function sendReadyForNextRound(conn) {
+  var obj = {};
+  obj["type"] = "readyForNextRound";
+  conn.send(obj);
+}
+
+function sendGameOver(conn, winner) {
+  var obj = {};
+  obj["type"] = "gameOver";
+  obj["winner"] = winner;
+  conn.send(obj);
+}
+
 var P;
 
 export {
@@ -121,5 +180,9 @@ export {
   onData ,
   sendRand ,
   sendTeam ,
+  sendPlayCard ,
+  sendAnnounceWinner ,
+  sendReadyForNextRound ,
+  sendGameOver ,
 }
 /* peerjs Not a pure module */
