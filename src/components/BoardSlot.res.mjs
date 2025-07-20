@@ -9,12 +9,18 @@ function BoardSlot(props) {
   var className = __className !== undefined ? __className : "";
   var teamColor = __teamColor !== undefined ? __teamColor : "blue";
   var textColorClass = teamColor === "blue" ? "text-blue-600" : "text-red-600";
-  return JsxRuntime.jsx("div", {
-              children: card !== undefined ? JsxRuntime.jsx("span", {
-                      children: card.toString(),
-                      className: textColorClass + " text-2xl"
-                    }) : null,
-              className: "w-16 h-24 m-2 flex items-center justify-center border-2 border-dashed rounded-lg bg-gray-100 " + className
+  return JsxRuntime.jsxs("div", {
+              children: [
+                JsxRuntime.jsx("div", {
+                      children: "R" + props.round.toString(),
+                      className: "text-xs text-gray-500 mb-1"
+                    }),
+                card !== undefined ? JsxRuntime.jsx("span", {
+                        children: card.toString(),
+                        className: textColorClass + " text-xl font-bold"
+                      }) : null
+              ],
+              className: "w-16 h-24 m-2 flex flex-col items-center justify-center border-2 border-dashed rounded-lg bg-gray-100 " + className
             });
 }
 
