@@ -380,21 +380,72 @@ let make = () => {
       </div>
     </div>
   } else if conn == None {
-    <div className="flex items-center p-4">{React.string("연결 상태: " ++ connStatus)}</div>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-gray-50 to-blue-50">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">{React.string("⚠️")}</span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">{React.string("연결 상태")}</h2>
+          <p className="text-gray-600">{React.string(connStatus)}</p>
+        </div>
+      </div>
+    </div>
   } else if oppRand == None || myRand == None {
-    <div className="flex flex-col items-center p-4">
-      {React.string("팀 결정 중...")}
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-indigo-50">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">{React.string("팀 결정 중...")}</h2>
+          <p className="text-gray-600 text-sm">{React.string("랜덤하게 팀을 배정하고 있습니다")}</p>
+        </div>
+      </div>
     </div>
   } else if myTeam == None && oppRand != None && myRand != None {
     // 팀 결정 로직는 useEffect로 이동, 여기선 UI만 표시
-    <div className="flex flex-col items-center p-4">
-      {React.string("팀 결정 중...")}
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-indigo-50">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">{React.string("팀 결정 중...")}</h2>
+          <p className="text-gray-600 text-sm">{React.string("랜덤하게 팀을 배정하고 있습니다")}</p>
+        </div>
+      </div>
     </div>
   } else if myTeam != None && !gameStarted {
     let team = Belt.Option.getExn(myTeam)
-    <div className="flex flex-col items-center p-4">
-      <div>{React.string("당신은 " ++ (if team == "red" { "Red" } else { "Blue" }) ++ " 팀입니다.")}</div>
-      <button className={"m-2 px-4 py-2 rounded " ++ (if team == "red" { "bg-red-500 text-white" } else { "bg-blue-500 text-white" })} onClick={_ => { setPlayerColor(_ => team); setGameStarted(_ => true) }}>{React.string("게임 시작")}</button>
+    let teamName = if team == "red" { "레드" } else { "블루" }
+    let bgGradient = if team == "red" { "from-red-50 to-pink-50" } else { "from-blue-50 to-indigo-50" }
+    let iconBg = if team == "red" { "bg-red-100" } else { "bg-blue-100" }
+    let buttonBg = if team == "red" { "bg-red-500 hover:bg-red-600" } else { "bg-blue-500 hover:bg-blue-600" }
+    
+    <div className={"min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b " ++ bgGradient}>
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
+        <div className="text-center mb-6">
+          <div className={"w-16 h-16 " ++ iconBg ++ " rounded-full flex items-center justify-center mx-auto mb-4"}>
+            <span className="text-2xl">{React.string(if team == "red" { "🔴" } else { "🔵" })}</span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">{React.string("팀 배정 완료!")}</h2>
+          <p className="text-gray-600 text-sm mb-4">{React.string("당신은 " ++ teamName ++ " 팀으로 배정되었습니다")}</p>
+          <div className={"inline-block px-4 py-2 rounded-full text-white font-medium " ++ (if team == "red" { "bg-red-500" } else { "bg-blue-500" })}>
+            {React.string(teamName ++ " 팀")}
+          </div>
+        </div>
+        
+        <button 
+          className={"w-full py-4 " ++ buttonBg ++ " text-white font-semibold rounded-lg shadow-md transition-colors duration-200"}
+          onClick={_ => { 
+            setPlayerColor(_ => team); 
+            setGameStarted(_ => true) 
+          }}
+        >
+          {React.string("🚀 게임 시작하기")}
+        </button>
+      </div>
     </div>
   } else {
     // Mobile First Design: 진짜 모바일 디바이스면 탭 기반, 아니면 데스크톱 그리드

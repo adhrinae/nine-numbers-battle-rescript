@@ -553,47 +553,137 @@ function App(props) {
   }
   if (conn === undefined) {
     return JsxRuntime.jsx("div", {
-                children: "연결 상태: " + connStatus,
-                className: "flex items-center p-4"
+                children: JsxRuntime.jsx("div", {
+                      children: JsxRuntime.jsxs("div", {
+                            children: [
+                              JsxRuntime.jsx("div", {
+                                    children: JsxRuntime.jsx("span", {
+                                          children: "⚠️",
+                                          className: "text-2xl"
+                                        }),
+                                    className: "w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                                  }),
+                              JsxRuntime.jsx("h2", {
+                                    children: "연결 상태",
+                                    className: "text-xl font-bold text-gray-800 mb-2"
+                                  }),
+                              JsxRuntime.jsx("p", {
+                                    children: connStatus,
+                                    className: "text-gray-600"
+                                  })
+                            ],
+                            className: "text-center"
+                          }),
+                      className: "w-full max-w-md bg-white rounded-2xl shadow-lg p-6"
+                    }),
+                className: "min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-gray-50 to-blue-50"
               });
   }
   if (oppRand === undefined || myRand === undefined) {
     return JsxRuntime.jsx("div", {
-                children: "팀 결정 중...",
-                className: "flex flex-col items-center p-4"
+                children: JsxRuntime.jsx("div", {
+                      children: JsxRuntime.jsxs("div", {
+                            children: [
+                              JsxRuntime.jsx("div", {
+                                    children: JsxRuntime.jsx("div", {
+                                          className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"
+                                        }),
+                                    className: "w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                                  }),
+                              JsxRuntime.jsx("h2", {
+                                    children: "팀 결정 중...",
+                                    className: "text-xl font-bold text-gray-800 mb-2"
+                                  }),
+                              JsxRuntime.jsx("p", {
+                                    children: "랜덤하게 팀을 배정하고 있습니다",
+                                    className: "text-gray-600 text-sm"
+                                  })
+                            ],
+                            className: "text-center"
+                          }),
+                      className: "w-full max-w-md bg-white rounded-2xl shadow-lg p-6"
+                    }),
+                className: "min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-indigo-50"
               });
   }
   if (myTeam === undefined && oppRand !== undefined && myRand !== undefined) {
     return JsxRuntime.jsx("div", {
-                children: "팀 결정 중...",
-                className: "flex flex-col items-center p-4"
+                children: JsxRuntime.jsx("div", {
+                      children: JsxRuntime.jsxs("div", {
+                            children: [
+                              JsxRuntime.jsx("div", {
+                                    children: JsxRuntime.jsx("div", {
+                                          className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"
+                                        }),
+                                    className: "w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                                  }),
+                              JsxRuntime.jsx("h2", {
+                                    children: "팀 결정 중...",
+                                    className: "text-xl font-bold text-gray-800 mb-2"
+                                  }),
+                              JsxRuntime.jsx("p", {
+                                    children: "랜덤하게 팀을 배정하고 있습니다",
+                                    className: "text-gray-600 text-sm"
+                                  })
+                            ],
+                            className: "text-center"
+                          }),
+                      className: "w-full max-w-md bg-white rounded-2xl shadow-lg p-6"
+                    }),
+                className: "min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-indigo-50"
               });
   }
   if (myTeam !== undefined && !match$5[0]) {
     var team = Belt_Option.getExn(myTeam);
-    return JsxRuntime.jsxs("div", {
-                children: [
-                  JsxRuntime.jsx("div", {
-                        children: "당신은 " + (
-                          team === "red" ? "Red" : "Blue"
-                        ) + " 팀입니다."
-                      }),
-                  JsxRuntime.jsx("button", {
-                        children: "게임 시작",
-                        className: "m-2 px-4 py-2 rounded " + (
-                          team === "red" ? "bg-red-500 text-white" : "bg-blue-500 text-white"
-                        ),
-                        onClick: (function (param) {
-                            setPlayerColor(function (param) {
-                                  return team;
-                                });
-                            setGameStarted(function (param) {
-                                  return true;
-                                });
-                          })
-                      })
-                ],
-                className: "flex flex-col items-center p-4"
+    var teamName = team === "red" ? "레드" : "블루";
+    var bgGradient = team === "red" ? "from-red-50 to-pink-50" : "from-blue-50 to-indigo-50";
+    var iconBg = team === "red" ? "bg-red-100" : "bg-blue-100";
+    var buttonBg = team === "red" ? "bg-red-500 hover:bg-red-600" : "bg-blue-500 hover:bg-blue-600";
+    return JsxRuntime.jsx("div", {
+                children: JsxRuntime.jsxs("div", {
+                      children: [
+                        JsxRuntime.jsxs("div", {
+                              children: [
+                                JsxRuntime.jsx("div", {
+                                      children: JsxRuntime.jsx("span", {
+                                            children: team === "red" ? "🔴" : "🔵",
+                                            className: "text-2xl"
+                                          }),
+                                      className: "w-16 h-16 " + iconBg + " rounded-full flex items-center justify-center mx-auto mb-4"
+                                    }),
+                                JsxRuntime.jsx("h2", {
+                                      children: "팀 배정 완료!",
+                                      className: "text-xl font-bold text-gray-800 mb-2"
+                                    }),
+                                JsxRuntime.jsx("p", {
+                                      children: "당신은 " + teamName + " 팀으로 배정되었습니다",
+                                      className: "text-gray-600 text-sm mb-4"
+                                    }),
+                                JsxRuntime.jsx("div", {
+                                      children: teamName + " 팀",
+                                      className: "inline-block px-4 py-2 rounded-full text-white font-medium " + (
+                                        team === "red" ? "bg-red-500" : "bg-blue-500"
+                                      )
+                                    })
+                              ],
+                              className: "text-center mb-6"
+                            }),
+                        JsxRuntime.jsx("button", {
+                              children: "🚀 게임 시작하기",
+                              className: "w-full py-4 " + buttonBg + " text-white font-semibold rounded-lg shadow-md transition-colors duration-200",
+                              onClick: (function (param) {
+                                  setPlayerColor(function (param) {
+                                        return team;
+                                      });
+                                  setGameStarted(function (param) {
+                                        return true;
+                                      });
+                                })
+                            })
+                      ],
+                      className: "w-full max-w-md bg-white rounded-2xl shadow-lg p-6"
+                    }),
+                className: "min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b " + bgGradient
               });
   }
   if (isMobile) {
