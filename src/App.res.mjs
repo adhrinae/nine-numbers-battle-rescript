@@ -10,10 +10,8 @@ import * as Js_promise from "rescript/lib/es6/js_promise.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as GameNetwork from "./interops/GameNetwork.res.mjs";
-import * as UseViewport from "./hooks/UseViewport.res.mjs";
 import * as MobileGameTabs from "./components/MobileGameTabs.res.mjs";
 import * as JsxRuntime from "react/jsx-runtime";
-import * as LandscapeRecommendation from "./components/LandscapeRecommendation.res.mjs";
 
 var isTrueMobile = (function() {
     return 'ontouchstart' in window && window.innerWidth < 1024;
@@ -130,7 +128,6 @@ function App(props) {
         return false;
       });
   var setCopied = match$20[1];
-  var viewport = UseViewport.useViewport();
   var isMobile = isTrueMobile();
   var match$21 = React.useState(function () {
         return "MyView";
@@ -836,11 +833,6 @@ function App(props) {
     }
     return JsxRuntime.jsxs("div", {
                 children: [
-                  viewport.shouldRecommendLandscape ? JsxRuntime.jsx(LandscapeRecommendation.make, {
-                          onDismiss: (function () {
-                              
-                            })
-                        }) : null,
                   JsxRuntime.jsx(MobileGameTabs.make, {
                         activeTab: match$21[0],
                         onTabChange: (function (tab) {

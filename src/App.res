@@ -1,7 +1,5 @@
 open GameNetwork
-open UseViewport
 open MobileGameTabs
-open LandscapeRecommendation
 
 @val @scope(("navigator", "clipboard"))
 external writeText: string => Js.Promise.t<unit> = "writeText"
@@ -49,7 +47,6 @@ let make = () => {
   let (copied, setCopied) = React.useState(() => false)
 
   // Viewport and mobile detection
-  let viewport = useViewport()
   let isMobile = isTrueMobile()
   
   // Mobile tab state
@@ -479,13 +476,6 @@ let make = () => {
     // Mobile First Design: 진짜 모바일 디바이스면 탭 기반, 아니면 데스크톱 그리드
     if isMobile {
       <div className="h-screen w-screen overflow-hidden">
-        {if viewport.shouldRecommendLandscape {
-          <LandscapeRecommendation
-            onDismiss={() => ()}
-          />
-        } else {
-          React.null
-        }}
         <MobileGameTabs
           activeTab
           onTabChange={tab => setActiveTab(_ => tab)}

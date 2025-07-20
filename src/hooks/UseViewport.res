@@ -4,7 +4,6 @@ type viewportInfo = {
   height: int,
   isMobile: bool,
   isLandscape: bool,
-  shouldRecommendLandscape: bool,
 }
 
 @val external innerWidth: int = "window.innerWidth"
@@ -15,15 +14,12 @@ let getViewportInfo = () => {
   let height = innerHeight
   let isMobile = width < 768 // Tailwind의 md breakpoint
   let isLandscape = width > height
-  // 모바일이면서 세로 모드이고, 너비가 좁으면 가로 모드 권장
-  let shouldRecommendLandscape = isMobile && !isLandscape && width < 640
   
   {
     width,
     height,
     isMobile,
     isLandscape,
-    shouldRecommendLandscape,
   }
 }
 

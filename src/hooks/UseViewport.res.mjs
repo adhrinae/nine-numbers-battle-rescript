@@ -7,13 +7,11 @@ function getViewportInfo() {
   var height = window.innerHeight;
   var isMobile = width < 768;
   var isLandscape = width > height;
-  var shouldRecommendLandscape = isMobile && !isLandscape && width < 640;
   return {
           width: width,
           height: height,
           isMobile: isMobile,
-          isLandscape: isLandscape,
-          shouldRecommendLandscape: shouldRecommendLandscape
+          isLandscape: isLandscape
         };
 }
 
