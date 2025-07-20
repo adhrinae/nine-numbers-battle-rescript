@@ -20,7 +20,6 @@ let make = () => {
   let oppColor = if playerColor == "blue" { "red" } else { "blue" }
 
   let (waiting, setWaiting) = React.useState(() => false)
-  let (lastResult, setLastResult) = React.useState(() => "")
   // track each round winner: "You win", "Opponent wins", "Tie"
   let (winners, setWinners) = React.useState(() => Belt.Array.make(9, None))
   let (oppCard, setOppCard) = React.useState(() => None)
@@ -121,7 +120,7 @@ let make = () => {
             setOppCard(_ => Some(card))
             setOppHand(prev => Belt.Array.keep(prev, c => c != card))
           }
-        | AnnounceWinner(winner) => setLastResult(_ => winner)
+        | AnnounceWinner(_) => () // 더 이상 사용하지 않음
         | ReadyForNextRound => setWaiting(_ => false)
         | GameOver(winner) => setGameOver(_ => Some(winner))
         | Other(_) => ()
@@ -151,14 +150,14 @@ let make = () => {
     None
   }, (myTeam, myRand, oppRand, role, conn))
 
-  // 라운드 승자 판정 및 다음 라운드 진행
+  // 라운드 승자 판정 및 다음 라운드 진행 - 각 라운드 결과는 표시하되 카드는 숨김
   React.useEffect(() => {
     let myMoveOpt = Belt.Array.get(myBoard, currentRound)
     let oppMoveOpt = oppCard
 
     switch (myMoveOpt, oppMoveOpt) {
     | (Some(Some(myMove)), Some(oppMove)) =>
-      // 승자 판정
+      // 이번 라운드 승부 판정
       let winnerText =
         if myMove == oppMove {
           "Tie"
@@ -171,24 +170,60 @@ let make = () => {
         } else {
           "Opponent wins"
         }
-      setLastResult(_ => winnerText)
-      setWinners(prev => {
-        let newW = Belt.Array.copy(prev)
-        ignore(Belt.Array.set(newW, currentRound, Some(winnerText)))
-        newW
-      })
 
-      // 상대방 보드 업데이트
+      // 상대방 보드 업데이트 (카드는 저장하지만 공개하지 않음)
       setOppBoard(prev => {
         let newBoard = Belt.Array.copy(prev)
         ignore(Belt.Array.set(newBoard, currentRound, Some(oppMove)))
         newBoard
       })
 
-      // 상태 초기화 및 다음 라운드로
+      // 이번 라운드 결과 저장
+      setWinners(prev => {
+        let newWinners = Belt.Array.copy(prev)
+        ignore(Belt.Array.set(newWinners, currentRound, Some(winnerText)))
+        newWinners
+      })
+
+      // 승수 계산 (현재 라운드 포함)
+      let currentWins = Belt.Array.keep(winners, w => 
+        switch w {
+        | Some("You win") => true
+        | _ => false
+        }
+      ) -> Belt.Array.length
+      let myWins = currentWins + (winnerText == "You win" ? 1 : 0)
+
+      let currentOppWins = Belt.Array.keep(winners, w => 
+        switch w {
+        | Some("Opponent wins") => true
+        | _ => false
+        }
+      ) -> Belt.Array.length
+      let oppWins = currentOppWins + (winnerText == "Opponent wins" ? 1 : 0)
+
+      // 다음 라운드로 이동
       setOppCard(_ => None)
-      setCurrentRound(prev => prev + 1)
+      let nextRound = currentRound + 1
+      setCurrentRound(_ => nextRound)
       setWaiting(_ => false)
+
+      // 5승 달성 시 게임 종료
+      if myWins >= 5 || oppWins >= 5 || nextRound >= 9 {
+        let finalWinner = if myWins >= 5 {
+          "You are the winner!"
+        } else if oppWins >= 5 {
+          "Opponent wins the game!"
+        } else if myWins > oppWins {
+          "You are the winner!"
+        } else if oppWins > myWins {
+          "Opponent wins the game!"
+        } else {
+          "It's a tie!"
+        }
+        
+        setGameOver(_ => Some(finalWinner))
+      }
     | _ => ()
     }
 
@@ -283,7 +318,7 @@ let make = () => {
           )}
         </div>
       </section>
-      // opponent board slots (mirrored)
+      // opponent board slots (mirrored) - 게임 종료 전까지는 카드 숨김
       <section className="flex flex-row mb-6">
         {React.array(
           Belt.Array.mapWithIndex(oppBoard, (i, cardOpt) => {
@@ -294,9 +329,14 @@ let make = () => {
               | Some(Some(_)) => " bg-yellow-200"
               | _ => ""
               }
+            
+            // 게임이 끝났거나 현재 라운드보다 이전 라운드인 경우만 카드 공개
+            let showCard = Belt.Option.isSome(gameOver)
+            let displayCard = if showCard { cardOpt } else { None }
+            
             <BoardSlot
               round=(i + 1)
-              card=cardOpt
+              card=displayCard
               className={"transform rotate-180" ++ winnerBgOpp}
               teamColor=oppColor
               key={"opp-" ++ string_of_int(i)}
@@ -309,10 +349,38 @@ let make = () => {
       :
         React.null
       }
-      {lastResult != "" ?
-        <div className="my-2">{React.string("Result: " ++ lastResult)}</div>
-      :
-        React.null
+      // 현재 스코어 표시
+      {
+        let myWins = Belt.Array.keep(winners, w => 
+          switch w {
+          | Some("You win") => true
+          | _ => false
+          }
+        ) -> Belt.Array.length
+        let oppWins = Belt.Array.keep(winners, w => 
+          switch w {
+          | Some("Opponent wins") => true
+          | _ => false
+          }
+        ) -> Belt.Array.length
+        
+        <div className="my-2 text-lg font-bold">
+          {React.string("Score: You " ++ string_of_int(myWins) ++ " - " ++ string_of_int(oppWins) ++ " Opponent")}
+        </div>
+      }
+      // 지난 라운드 결과 표시
+      {
+        if currentRound > 0 {
+          switch Belt.Array.get(winners, currentRound - 1) {
+          | Some(Some(result)) => 
+            <div className="my-2">
+              {React.string("Round " ++ string_of_int(currentRound) ++ " result: " ++ result)}
+            </div>
+          | _ => React.null
+          }
+        } else {
+          React.null
+        }
       }
       // my board slots
       <section className="flex flex-row mb-6">
