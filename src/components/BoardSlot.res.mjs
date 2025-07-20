@@ -3,12 +3,16 @@
 import * as JsxRuntime from "react/jsx-runtime";
 
 function BoardSlot(props) {
+  var __isMobile = props.isMobile;
   var __teamColor = props.teamColor;
   var __className = props.className;
   var card = props.card;
   var className = __className !== undefined ? __className : "";
   var teamColor = __teamColor !== undefined ? __teamColor : "blue";
+  var isMobile = __isMobile !== undefined ? __isMobile : false;
   var textColorClass = teamColor === "blue" ? "text-blue-600" : "text-red-600";
+  var sizeClass = isMobile ? "w-12 h-16" : "w-16 h-24";
+  var textSizeClass = isMobile ? "text-sm" : "text-xl";
   return JsxRuntime.jsxs("div", {
               children: [
                 JsxRuntime.jsx("div", {
@@ -17,10 +21,10 @@ function BoardSlot(props) {
                     }),
                 card !== undefined ? JsxRuntime.jsx("span", {
                         children: card.toString(),
-                        className: textColorClass + " text-xl font-bold"
+                        className: textColorClass + " " + textSizeClass + " font-bold"
                       }) : null
               ],
-              className: "w-16 h-24 m-2 flex flex-col items-center justify-center border-2 border-dashed rounded-lg bg-gray-100 " + className
+              className: sizeClass + " m-1 flex flex-col items-center justify-center border-2 border-dashed rounded-lg bg-gray-100 " + className
             });
 }
 

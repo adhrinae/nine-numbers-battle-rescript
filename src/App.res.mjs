@@ -2,13 +2,21 @@
 
 import * as Card from "./components/Card.res.mjs";
 import * as React from "react";
+import * as Caml_obj from "rescript/lib/es6/caml_obj.js";
 import * as BoardSlot from "./components/BoardSlot.res.mjs";
 import * as Belt_Array from "rescript/lib/es6/belt_Array.js";
 import * as Js_promise from "rescript/lib/es6/js_promise.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as GameNetwork from "./interops/GameNetwork.res.mjs";
+import * as UseViewport from "./hooks/UseViewport.res.mjs";
+import * as MobileGameTabs from "./components/MobileGameTabs.res.mjs";
 import * as JsxRuntime from "react/jsx-runtime";
+import * as LandscapeRecommendation from "./components/LandscapeRecommendation.res.mjs";
+
+var isTrueMobile = (function() {
+    return 'ontouchstart' in window && window.innerWidth < 768;
+  });
 
 function App(props) {
   var allCards = Belt_Array.makeBy(9, (function (i) {
@@ -114,6 +122,12 @@ function App(props) {
         return false;
       });
   var setCopied = match$19[1];
+  var viewport = UseViewport.useViewport();
+  var isMobile = isTrueMobile();
+  var match$20 = React.useState(function () {
+        return "MyView";
+      });
+  var setActiveTab = match$20[1];
   React.useEffect((function () {
           GameNetwork.onOpen(peer, (function (id) {
                   setLocalId(function (param) {
@@ -446,6 +460,34 @@ function App(props) {
                 className: "flex flex-col items-center p-4"
               });
   }
+  if (isMobile) {
+    return JsxRuntime.jsxs("div", {
+                children: [
+                  viewport.shouldRecommendLandscape ? JsxRuntime.jsx(LandscapeRecommendation.make, {
+                          onDismiss: (function () {
+                              
+                            })
+                        }) : null,
+                  JsxRuntime.jsx(MobileGameTabs.make, {
+                        activeTab: match$20[0],
+                        onTabChange: (function (tab) {
+                            setActiveTab(function (param) {
+                                  return tab;
+                                });
+                          }),
+                        myWins: Belt_Array.keep(winners, (function (w) {
+                                return Caml_obj.equal(w, "You win");
+                              })).length,
+                        oppWins: Belt_Array.keep(winners, (function (w) {
+                                return Caml_obj.equal(w, "Opponent wins");
+                              })).length,
+                        currentRound: currentRound,
+                        waiting: waiting
+                      })
+                ],
+                className: "h-screen w-screen overflow-hidden"
+              });
+  }
   var myWins = Belt_Array.keep(winners, (function (w) {
           if (w === "You win") {
             return true;
@@ -462,9 +504,9 @@ function App(props) {
         })).length;
   var tmp;
   if (currentRound > 0) {
-    var match$20 = Belt_Array.get(winners, currentRound - 1 | 0);
-    if (match$20 !== undefined) {
-      var result = Caml_option.valFromOption(match$20);
+    var match$21 = Belt_Array.get(winners, currentRound - 1 | 0);
+    if (match$21 !== undefined) {
+      var result = Caml_option.valFromOption(match$21);
       tmp = result !== undefined ? JsxRuntime.jsx("div", {
               children: "Round " + String(currentRound) + " result: " + result,
               className: "my-2"

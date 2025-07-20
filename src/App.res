@@ -1,7 +1,17 @@
 open GameNetwork
+open UseViewport
+open MobileGameTabs
+open LandscapeRecommendation
 
 @val @scope(("navigator", "clipboard"))
 external writeText: string => Js.Promise.t<unit> = "writeText"
+
+// True mobile detection (touch capability + small screen)
+let isTrueMobile = %raw(`
+  function() {
+    return 'ontouchstart' in window && window.innerWidth < 768;
+  }
+`)
 
 @react.component
 let make = () => {
@@ -36,6 +46,13 @@ let make = () => {
   let (oppRand, setOppRand) = React.useState(() => None)
   let (myTeam, setMyTeam) = React.useState(() => None)
   let (copied, setCopied) = React.useState(() => false)
+
+  // Viewport and mobile detection
+  let viewport = useViewport()
+  let isMobile = isTrueMobile()
+  
+  // Mobile tab state
+  let (activeTab, setActiveTab) = React.useState(() => MobileGameTabs.MyView)
 
   // 카드 클릭 핸들러
   let onCardClick = n => {
@@ -281,7 +298,28 @@ let make = () => {
       <button className={"m-2 px-4 py-2 rounded " ++ (if team == "red" { "bg-red-500 text-white" } else { "bg-blue-500 text-white" })} onClick={_ => { setPlayerColor(_ => team); setGameStarted(_ => true) }}>{React.string("게임 시작")}</button>
     </div>
   } else {
-    <main className="flex flex-col items-center p-4">
+    // Mobile First Design: 진짜 모바일 디바이스면 탭 기반, 아니면 데스크톱 그리드
+    if isMobile {
+      <div className="h-screen w-screen overflow-hidden">
+        {if viewport.shouldRecommendLandscape {
+          <LandscapeRecommendation
+            onDismiss={() => ()}
+          />
+        } else {
+          React.null
+        }}
+        <MobileGameTabs
+          activeTab
+          onTabChange={tab => setActiveTab(_ => tab)}
+          myWins={Belt.Array.keep(winners, w => w == Some("You win")) |> Belt.Array.length}
+          oppWins={Belt.Array.keep(winners, w => w == Some("Opponent wins")) |> Belt.Array.length}
+          currentRound
+          waiting
+        />
+      </div>
+    } else {
+      // 데스크톱: 기존 레이아웃
+      <main className="flex flex-col items-center p-4">
       // opponent overview (hidden cards count)
       <section className="flex flex-row mb-2">
         <div className="flex flex-row items-center mr-4">
@@ -429,5 +467,6 @@ let make = () => {
       | None => React.null
       }}
     </main>
+    }
   }
 }
