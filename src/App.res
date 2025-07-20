@@ -34,6 +34,7 @@ let make = () => {
   let (winners, setWinners) = React.useState(() => Belt.Array.make(9, None))
   let (oppCard, setOppCard) = React.useState(() => None)
   let (gameOver, setGameOver) = React.useState(() => None)
+  let (showGameOverModal, setShowGameOverModal) = React.useState(() => false)
 
   // PeerJS network setup
   let peer = React.useMemo0(() => makePeer())
@@ -228,18 +229,19 @@ let make = () => {
       // 5승 달성 시 게임 종료
       if myWins >= 5 || oppWins >= 5 || nextRound >= 9 {
         let finalWinner = if myWins >= 5 {
-          "You are the winner!"
+          "당신이 승리했습니다!"
         } else if oppWins >= 5 {
-          "Opponent wins the game!"
+          "상대방이 승리했습니다!"
         } else if myWins > oppWins {
-          "You are the winner!"
+          "당신이 승리했습니다!"
         } else if oppWins > myWins {
-          "Opponent wins the game!"
+          "상대방이 승리했습니다!"
         } else {
-          "It's a tie!"
+          "무승부입니다!"
         }
         
         setGameOver(_ => Some(finalWinner))
+        setShowGameOverModal(_ => true)
       }
     | _ => ()
     }
@@ -475,10 +477,49 @@ let make = () => {
           gameOver
           onCardClick
         />
+        
+        // 게임 종료 모달
+        {showGameOverModal && Belt.Option.isSome(gameOver) ?
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-6">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4">
+              <div className="text-center">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center bg-gradient-to-r from-yellow-400 to-orange-500">
+                  <span className="text-3xl">{React.string("🎉")}</span>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">{React.string("게임 종료!")}</h2>
+                <div className="mb-6">
+                  {switch gameOver {
+                  | Some(winner) => 
+                    let (winnerText, textColor) = 
+                      if Js.String.includes("당신이 승리했습니다", winner) {
+                        ("🎊 축하합니다! 승리하셨습니다! 🎊", "text-green-600")
+                      } else if Js.String.includes("상대방이 승리했습니다", winner) {
+                        ("😔 아쉽게도 패배하셨습니다", "text-red-600") 
+                      } else {
+                        ("🤝 무승부입니다!", "text-blue-600")
+                      }
+                    <p className={"text-lg font-semibold " ++ textColor}>{React.string(winnerText)}</p>
+                  | None => React.null
+                  }}
+                </div>
+                <button 
+                  className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200"
+                  onClick={_ => {
+                    setShowGameOverModal(_ => false)
+                    setActiveTab(_ => MobileGameTabs.GameBoard)
+                  }}
+                >
+                  {React.string("🏆 결과 확인하기")}
+                </button>
+              </div>
+            </div>
+          </div>
+        : React.null}
       </div>
     } else {
       // 데스크톱: 기존 레이아웃
-      <main className="flex flex-col items-center p-4">
+      <div className="relative">
+        <main className="flex flex-col items-center p-4">
       // opponent overview (hidden cards count)
       <section className="flex flex-row mb-2">
         <div className="flex flex-row items-center mr-4">
@@ -621,11 +662,47 @@ let make = () => {
       {switch gameOver {
       | Some(winner) =>
         <div className="mt-4 text-2xl font-bold">
-          {React.string("Game Over: " ++ winner)}
+          {React.string(winner)}
         </div>
       | None => React.null
       }}
     </main>
+    
+    // 데스크톱용 게임 종료 모달
+    {showGameOverModal && Belt.Option.isSome(gameOver) ?
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-6">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4">
+          <div className="text-center">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center bg-gradient-to-r from-yellow-400 to-orange-500">
+              <span className="text-4xl">{React.string("🎉")}</span>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">{React.string("게임 종료!")}</h2>
+            <div className="mb-8">
+              {switch gameOver {
+              | Some(winner) => 
+                let (winnerText, textColor) = 
+                  if Js.String.includes("당신이 승리했습니다", winner) {
+                    ("🎊 축하합니다! 승리하셨습니다! 🎊", "text-green-600")
+                  } else if Js.String.includes("상대방이 승리했습니다", winner) {
+                    ("😔 아쉽게도 패배하셨습니다", "text-red-600") 
+                  } else {
+                    ("🤝 무승부입니다!", "text-blue-600")
+                  }
+                <p className={"text-xl font-semibold " ++ textColor}>{React.string(winnerText)}</p>
+              | None => React.null
+              }}
+            </div>
+            <button 
+              className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200 text-lg"
+              onClick={_ => setShowGameOverModal(_ => false)}
+            >
+              {React.string("🏆 결과 확인하기")}
+            </button>
+          </div>
+        </div>
+      </div>
+    : React.null}
+      </div>
     }
   }
 }
