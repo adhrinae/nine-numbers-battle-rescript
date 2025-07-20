@@ -6,10 +6,10 @@ open LandscapeRecommendation
 @val @scope(("navigator", "clipboard"))
 external writeText: string => Js.Promise.t<unit> = "writeText"
 
-// True mobile detection (touch capability + small screen)
+// True mobile detection (touch capability + mobile screen)
 let isTrueMobile = %raw(`
   function() {
-    return 'ontouchstart' in window && window.innerWidth < 768;
+    return 'ontouchstart' in window && window.innerWidth < 1024;
   }
 `)
 
@@ -315,6 +315,15 @@ let make = () => {
           oppWins={Belt.Array.keep(winners, w => w == Some("Opponent wins")) |> Belt.Array.length}
           currentRound
           waiting
+          myBoard
+          oppBoard
+          hand
+          oppHand
+          playerColor
+          oppColor
+          winners
+          gameOver
+          onCardClick
         />
       </div>
     } else {

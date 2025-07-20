@@ -15,7 +15,7 @@ import * as JsxRuntime from "react/jsx-runtime";
 import * as LandscapeRecommendation from "./components/LandscapeRecommendation.res.mjs";
 
 var isTrueMobile = (function() {
-    return 'ontouchstart' in window && window.innerWidth < 768;
+    return 'ontouchstart' in window && window.innerWidth < 1024;
   });
 
 function App(props) {
@@ -26,6 +26,7 @@ function App(props) {
         return allCards;
       });
   var setHand = match[1];
+  var hand = match[0];
   var match$1 = React.useState(function () {
         return Belt_Array.make(9, undefined);
       });
@@ -40,6 +41,7 @@ function App(props) {
         return Belt_Array.make(9, undefined);
       });
   var setOppBoard = match$3[1];
+  var oppBoard = match$3[0];
   var match$4 = React.useState(function () {
         return allCards;
       });
@@ -128,6 +130,26 @@ function App(props) {
         return "MyView";
       });
   var setActiveTab = match$20[1];
+  var onCardClick = function (n) {
+    var match = Belt_Array.get(myBoard, currentRound);
+    if (match !== undefined && !(Caml_option.valFromOption(match) !== undefined || conn === undefined)) {
+      setMyBoard(function (prevBoard) {
+            var newBoard = prevBoard.slice(0);
+            Belt_Array.set(newBoard, currentRound, n);
+            return newBoard;
+          });
+      setHand(function (prevHand) {
+            return Belt_Array.keep(prevHand, (function (c) {
+                          return c !== n;
+                        }));
+          });
+      GameNetwork.sendPlayCard(Caml_option.valFromOption(conn), n);
+      return setWaiting(function (param) {
+                  return true;
+                });
+    }
+    
+  };
   React.useEffect((function () {
           GameNetwork.onOpen(peer, (function (id) {
                   setLocalId(function (param) {
@@ -482,7 +504,16 @@ function App(props) {
                                 return Caml_obj.equal(w, "Opponent wins");
                               })).length,
                         currentRound: currentRound,
-                        waiting: waiting
+                        waiting: waiting,
+                        myBoard: myBoard,
+                        oppBoard: oppBoard,
+                        hand: hand,
+                        oppHand: oppHand,
+                        playerColor: playerColor,
+                        oppColor: oppColor,
+                        winners: winners,
+                        gameOver: gameOver,
+                        onCardClick: onCardClick
                       })
                 ],
                 className: "h-screen w-screen overflow-hidden"
@@ -560,7 +591,7 @@ function App(props) {
                       className: "flex flex-row mb-2"
                     }),
                 JsxRuntime.jsx("section", {
-                      children: Belt_Array.mapWithIndex(match$3[0], (function (i, cardOpt) {
+                      children: Belt_Array.mapWithIndex(oppBoard, (function (i, cardOpt) {
                               var match = Belt_Array.get(winners, i);
                               var winnerBgOpp;
                               if (match !== undefined) {
@@ -620,28 +651,11 @@ function App(props) {
                       className: "flex flex-row mb-6"
                     }),
                 JsxRuntime.jsx("section", {
-                      children: Belt_Array.map(match[0], (function (n) {
+                      children: Belt_Array.map(hand, (function (n) {
                               return JsxRuntime.jsx(Card.make, {
                                           number: n,
                                           onClick: (function () {
-                                              var match = Belt_Array.get(myBoard, currentRound);
-                                              if (match !== undefined && !(Caml_option.valFromOption(match) !== undefined || conn === undefined)) {
-                                                setMyBoard(function (prevBoard) {
-                                                      var newBoard = prevBoard.slice(0);
-                                                      Belt_Array.set(newBoard, currentRound, n);
-                                                      return newBoard;
-                                                    });
-                                                setHand(function (prevHand) {
-                                                      return Belt_Array.keep(prevHand, (function (c) {
-                                                                    return c !== n;
-                                                                  }));
-                                                    });
-                                                GameNetwork.sendPlayCard(Caml_option.valFromOption(conn), n);
-                                                return setWaiting(function (param) {
-                                                            return true;
-                                                          });
-                                              }
-                                              
+                                              onCardClick(n);
                                             }),
                                           selected: false,
                                           disabled: waiting || Belt_Option.isSome(gameOver),
