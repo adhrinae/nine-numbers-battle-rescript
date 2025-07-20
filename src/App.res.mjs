@@ -119,12 +119,6 @@ function App(props) {
         return false;
       });
   var setCopied = match$20[1];
-  var oppWhiteCount = Belt_Array.keep(oppHand, (function (c) {
-          return c % 2 === 1;
-        })).length;
-  var oppBlackCount = Belt_Array.keep(oppHand, (function (c) {
-          return c % 2 === 0;
-        })).length;
   React.useEffect((function () {
           GameNetwork.onOpen(peer, (function (id) {
                   setLocalId(function (param) {
@@ -413,7 +407,9 @@ function App(props) {
                                       children: "Opponent's Hand:",
                                       className: "mr-2"
                                     }),
-                                Belt_Array.mapWithIndex(Belt_Array.make(oppWhiteCount, 0), (function (param, i) {
+                                Belt_Array.mapWithIndex(Belt_Array.keep(oppHand, (function (c) {
+                                            return c % 2 === 1;
+                                          })), (function (card, i) {
                                         return JsxRuntime.jsx(Card.make, {
                                                     number: 1,
                                                     onClick: (function () {
@@ -423,9 +419,11 @@ function App(props) {
                                                     disabled: true,
                                                     teamColor: "white",
                                                     isHidden: true
-                                                  }, "opp-white-" + String(i));
+                                                  }, "opp-white-" + String(card) + "-" + String(i));
                                       })),
-                                Belt_Array.mapWithIndex(Belt_Array.make(oppBlackCount, 0), (function (param, i) {
+                                Belt_Array.mapWithIndex(Belt_Array.keep(oppHand, (function (c) {
+                                            return c % 2 === 0;
+                                          })), (function (card, i) {
                                         return JsxRuntime.jsx(Card.make, {
                                                     number: 2,
                                                     onClick: (function () {
@@ -435,7 +433,7 @@ function App(props) {
                                                     disabled: true,
                                                     teamColor: "black",
                                                     isHidden: true
-                                                  }, "opp-black-" + String(i));
+                                                  }, "opp-black-" + String(card) + "-" + String(i));
                                       }))
                               ],
                               className: "flex flex-row items-center mr-4"

@@ -38,17 +38,6 @@ let make = () => {
   let (myTeam, setMyTeam) = React.useState(() => None)
   let (copied, setCopied) = React.useState(() => false)
 
-  // opponent card counts (white=odd, black=even)
-  let oppWhiteCount =
-    oppHand
-    -> Belt.Array.keep(c => mod(c, 2) == 1)
-    -> Belt.Array.length
-
-  let oppBlackCount =
-    oppHand
-    -> Belt.Array.keep(c => mod(c, 2) == 0)
-    -> Belt.Array.length
-
   // 카드 클릭 핸들러
   let onCardClick = n => {
     switch (Belt.Array.get(myBoard, currentRound), conn) {
@@ -263,9 +252,11 @@ let make = () => {
         <div className="flex flex-row items-center mr-4">
           <span className="mr-2">{React.string("Opponent's Hand:")}</span>
           {React.array(
-            Belt.Array.make(oppWhiteCount, 0)->Belt.Array.mapWithIndex((_, i) =>
+            oppHand
+            -> Belt.Array.keep(c => mod(c, 2) == 1)
+            -> Belt.Array.mapWithIndex((card, i) =>
               <Card
-                key={"opp-white-" ++ string_of_int(i)}
+                key={"opp-white-" ++ string_of_int(card) ++ "-" ++ string_of_int(i)}
                 number=1
                 onClick={() => ()}
                 disabled=true
@@ -276,9 +267,11 @@ let make = () => {
             ),
           )}
           {React.array(
-            Belt.Array.make(oppBlackCount, 0)->Belt.Array.mapWithIndex((_, i) =>
+            oppHand
+            -> Belt.Array.keep(c => mod(c, 2) == 0)
+            -> Belt.Array.mapWithIndex((card, i) =>
               <Card
-                key={"opp-black-" ++ string_of_int(i)}
+                key={"opp-black-" ++ string_of_int(card) ++ "-" ++ string_of_int(i)}
                 number=2
                 onClick={() => ()}
                 disabled=true
