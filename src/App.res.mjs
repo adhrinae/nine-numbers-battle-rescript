@@ -4,6 +4,7 @@ import * as Card from "./components/Card.res.mjs";
 import * as React from "react";
 import * as Caml_obj from "rescript/lib/es6/caml_obj.js";
 import * as BoardSlot from "./components/BoardSlot.res.mjs";
+import * as Js_string from "rescript/lib/es6/js_string.js";
 import * as Belt_Array from "rescript/lib/es6/belt_Array.js";
 import * as Js_promise from "rescript/lib/es6/js_promise.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
@@ -338,103 +339,216 @@ function App(props) {
   if (role === "") {
     return JsxRuntime.jsxs("div", {
                 children: [
-                  JsxRuntime.jsx("button", {
-                        children: "새 게임 시작",
-                        className: "m-2 px-4 py-2 bg-green-500 text-white rounded",
-                        onClick: (function (param) {
-                            setRole(function (param) {
-                                  return "host";
-                                });
-                          })
+                  JsxRuntime.jsxs("div", {
+                        children: [
+                          JsxRuntime.jsx("h1", {
+                                children: "구룡쟁패",
+                                className: "text-3xl font-bold text-gray-800 mb-2"
+                              }),
+                          JsxRuntime.jsx("p", {
+                                children: "친구와 함께 즐기는 카드 게임",
+                                className: "text-gray-600"
+                              })
+                        ],
+                        className: "text-center mb-8"
                       }),
-                  JsxRuntime.jsx("button", {
-                        children: "게임 참여",
-                        className: "m-2 px-4 py-2 bg-purple-500 text-white rounded",
-                        onClick: (function (param) {
-                            setRole(function (param) {
-                                  return "join";
-                                });
-                          })
+                  JsxRuntime.jsxs("div", {
+                        children: [
+                          JsxRuntime.jsx("button", {
+                                children: "🎮 새 게임 시작",
+                                className: "w-full py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200",
+                                onClick: (function (param) {
+                                    setRole(function (param) {
+                                          return "host";
+                                        });
+                                  })
+                              }),
+                          JsxRuntime.jsx("button", {
+                                children: "🔗 게임 참여",
+                                className: "w-full py-4 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200",
+                                onClick: (function (param) {
+                                    setRole(function (param) {
+                                          return "join";
+                                        });
+                                  })
+                              })
+                        ],
+                        className: "w-full max-w-sm space-y-4"
                       })
                 ],
-                className: "flex flex-col items-center p-4"
+                className: "min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-purple-50"
               });
   }
   if (role === "host" && conn === undefined) {
-    return JsxRuntime.jsxs("div", {
-                children: [
-                  JsxRuntime.jsxs("div", {
-                        children: [
-                          JsxRuntime.jsx("span", {
-                                children: "Your ID: " + localId
-                              }),
-                          JsxRuntime.jsx("button", {
-                                children: "복사",
-                                className: "px-2 py-1 bg-gray-200 rounded text-xs",
-                                onClick: (function (param) {
-                                    Js_promise.then_((function () {
-                                            setCopied(function (param) {
-                                                  return true;
-                                                });
-                                            setTimeout((function () {
-                                                    setCopied(function (param) {
-                                                          return false;
-                                                        });
-                                                  }), 1200);
-                                            return Promise.resolve();
-                                          }), navigator.clipboard.writeText(localId));
-                                  })
-                              }),
-                          match$19[0] ? JsxRuntime.jsx("span", {
-                                  children: "복사됨!",
-                                  className: "text-green-500 text-xs ml-2"
-                                }) : null
-                        ],
-                        className: "flex items-center space-x-2"
-                      }),
-                  JsxRuntime.jsx("div", {
-                        children: "이 ID를 친구에게 공유하세요."
-                      }),
-                  JsxRuntime.jsx("div", {
-                        children: "상대방의 연결을 기다리는 중...",
-                        className: "mt-4"
-                      })
-                ],
-                className: "flex flex-col items-center p-4"
+    return JsxRuntime.jsx("div", {
+                children: JsxRuntime.jsxs("div", {
+                      children: [
+                        JsxRuntime.jsxs("div", {
+                              children: [
+                                JsxRuntime.jsx("div", {
+                                      children: JsxRuntime.jsx("span", {
+                                            children: "🎮",
+                                            className: "text-2xl"
+                                          }),
+                                      className: "w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                                    }),
+                                JsxRuntime.jsx("h2", {
+                                      children: "게임 방 생성됨",
+                                      className: "text-xl font-bold text-gray-800 mb-2"
+                                    }),
+                                JsxRuntime.jsx("p", {
+                                      children: "친구가 참여할 수 있도록 ID를 공유하세요",
+                                      className: "text-gray-600 text-sm"
+                                    })
+                              ],
+                              className: "text-center mb-6"
+                            }),
+                        JsxRuntime.jsx("div", {
+                              children: JsxRuntime.jsxs("div", {
+                                    children: [
+                                      JsxRuntime.jsxs("div", {
+                                            children: [
+                                              JsxRuntime.jsx("label", {
+                                                    children: "게임 ID",
+                                                    className: "block text-xs text-gray-500 mb-1"
+                                                  }),
+                                              JsxRuntime.jsx("div", {
+                                                    children: localId,
+                                                    className: "font-mono text-sm text-gray-800 break-all"
+                                                  })
+                                            ],
+                                            className: "flex-1"
+                                          }),
+                                      JsxRuntime.jsx("button", {
+                                            children: match$19[0] ? "복사됨!" : "복사",
+                                            className: "ml-3 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors duration-200",
+                                            onClick: (function (param) {
+                                                Js_promise.then_((function () {
+                                                        setCopied(function (param) {
+                                                              return true;
+                                                            });
+                                                        setTimeout((function () {
+                                                                setCopied(function (param) {
+                                                                      return false;
+                                                                    });
+                                                              }), 1200);
+                                                        return Promise.resolve();
+                                                      }), navigator.clipboard.writeText(localId));
+                                              })
+                                          })
+                                    ],
+                                    className: "flex items-center justify-between"
+                                  }),
+                              className: "bg-gray-50 rounded-lg p-4 mb-4"
+                            }),
+                        JsxRuntime.jsx("div", {
+                              children: JsxRuntime.jsxs("div", {
+                                    children: [
+                                      JsxRuntime.jsx("div", {
+                                            className: "animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-500 mr-2"
+                                          }),
+                                      JsxRuntime.jsx("span", {
+                                            children: "상대방 연결 대기중...",
+                                            className: "text-yellow-700 text-sm"
+                                          })
+                                    ],
+                                    className: "inline-flex items-center px-4 py-2 bg-yellow-50 rounded-lg"
+                                  }),
+                              className: "text-center"
+                            })
+                      ],
+                      className: "w-full max-w-md bg-white rounded-2xl shadow-lg p-6"
+                    }),
+                className: "min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-green-50 to-blue-50"
               });
   }
   if (role === "join" && conn === undefined) {
-    return JsxRuntime.jsxs("div", {
-                children: [
-                  JsxRuntime.jsx("input", {
-                        className: "border p-2",
-                        placeholder: "방장 ID 입력",
-                        value: remoteIdInput,
-                        onChange: (function (e) {
-                            setRemoteIdInput(function (param) {
-                                  return e.target.value;
-                                });
-                          })
-                      }),
-                  JsxRuntime.jsx("button", {
-                        children: "연결",
-                        className: "m-2 px-4 py-2 bg-blue-500 text-white rounded",
-                        onClick: (function (param) {
-                            setConnStatus(function (param) {
-                                  return "연결 중...";
-                                });
-                            var trimmedId = remoteIdInput.trim();
-                            var c = GameNetwork.connect(peer, trimmedId);
-                            setConn(function (param) {
-                                  return Caml_option.some(c);
-                                });
-                          })
-                      }),
-                  JsxRuntime.jsx("div", {
-                        children: connStatus
-                      })
-                ],
-                className: "flex flex-col items-center p-4"
+    var isInputEmpty = remoteIdInput.trim() === "";
+    var isConnecting = connStatus === "연결 중...";
+    return JsxRuntime.jsx("div", {
+                children: JsxRuntime.jsxs("div", {
+                      children: [
+                        JsxRuntime.jsxs("div", {
+                              children: [
+                                JsxRuntime.jsx("div", {
+                                      children: JsxRuntime.jsx("span", {
+                                            children: "🔗",
+                                            className: "text-2xl"
+                                          }),
+                                      className: "w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                                    }),
+                                JsxRuntime.jsx("h2", {
+                                      children: "게임 참여",
+                                      className: "text-xl font-bold text-gray-800 mb-2"
+                                    }),
+                                JsxRuntime.jsx("p", {
+                                      children: "친구로부터 받은 게임 ID를 입력하세요",
+                                      className: "text-gray-600 text-sm"
+                                    })
+                              ],
+                              className: "text-center mb-6"
+                            }),
+                        JsxRuntime.jsxs("div", {
+                              children: [
+                                JsxRuntime.jsxs("div", {
+                                      children: [
+                                        JsxRuntime.jsx("label", {
+                                              children: "게임 ID",
+                                              className: "block text-sm font-medium text-gray-700 mb-2"
+                                            }),
+                                        JsxRuntime.jsx("input", {
+                                              className: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors duration-200 font-mono text-sm",
+                                              disabled: isConnecting,
+                                              placeholder: "예: abc123def456",
+                                              value: remoteIdInput,
+                                              onChange: (function (e) {
+                                                  setRemoteIdInput(function (param) {
+                                                        return e.target.value;
+                                                      });
+                                                })
+                                            })
+                                      ]
+                                    }),
+                                JsxRuntime.jsx("button", {
+                                      children: isConnecting ? JsxRuntime.jsxs("div", {
+                                              children: [
+                                                JsxRuntime.jsx("div", {
+                                                      className: "animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"
+                                                    }),
+                                                "연결 중..."
+                                              ],
+                                              className: "flex items-center justify-center"
+                                            }) : "게임 참여하기",
+                                      className: isInputEmpty || isConnecting ? "w-full py-3 bg-gray-300 text-gray-500 font-semibold rounded-lg cursor-not-allowed" : "w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200",
+                                      disabled: isInputEmpty || isConnecting,
+                                      onClick: (function (param) {
+                                          if (!(!isInputEmpty && !isConnecting)) {
+                                            return ;
+                                          }
+                                          setConnStatus(function (param) {
+                                                return "연결 중...";
+                                              });
+                                          var trimmedId = remoteIdInput.trim();
+                                          var c = GameNetwork.connect(peer, trimmedId);
+                                          setConn(function (param) {
+                                                return Caml_option.some(c);
+                                              });
+                                        })
+                                    }),
+                                connStatus !== "" && connStatus !== "연결 중..." ? JsxRuntime.jsx("div", {
+                                        children: JsxRuntime.jsx("div", {
+                                              children: connStatus,
+                                              className: Js_string.includes("연결 실패", connStatus) || Js_string.includes("Error", connStatus) ? "inline-block px-3 py-2 bg-red-50 text-red-700 text-sm rounded-lg" : "inline-block px-3 py-2 bg-blue-50 text-blue-700 text-sm rounded-lg"
+                                            }),
+                                        className: "text-center"
+                                      }) : null
+                              ],
+                              className: "space-y-4"
+                            })
+                      ],
+                      className: "w-full max-w-md bg-white rounded-2xl shadow-lg p-6"
+                    }),
+                className: "min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-purple-50 to-pink-50"
               });
   }
   if (conn === undefined) {

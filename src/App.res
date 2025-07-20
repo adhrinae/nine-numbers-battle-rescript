@@ -249,36 +249,135 @@ let make = () => {
 
   // UI flow: select host/join, handle connection, then choose color, then game
   if role == "" {
-    <div className="flex flex-col items-center p-4">
-      <button className="m-2 px-4 py-2 bg-green-500 text-white rounded" onClick={_ => setRole(_ => "host")}>{React.string("새 게임 시작")}</button>
-      <button className="m-2 px-4 py-2 bg-purple-500 text-white rounded" onClick={_ => setRole(_ => "join")}>{React.string("게임 참여")}</button>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-purple-50">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">{React.string("구룡쟁패")}</h1>
+        <p className="text-gray-600">{React.string("친구와 함께 즐기는 카드 게임")}</p>
+      </div>
+      <div className="w-full max-w-sm space-y-4">
+        <button 
+          className="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200" 
+          onClick={_ => setRole(_ => "host")}
+        >
+          {React.string("🎮 새 게임 시작")}
+        </button>
+        <button 
+          className="w-full py-4 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200" 
+          onClick={_ => setRole(_ => "join")}
+        >
+          {React.string("🔗 게임 참여")}
+        </button>
+      </div>
     </div>
   } else if role == "host" && conn == None {
-    <div className="flex flex-col items-center p-4">
-      <div className="flex items-center space-x-2">
-        <span>{React.string("Your ID: " ++ localId)}</span>
-        <button className="px-2 py-1 bg-gray-200 rounded text-xs" onClick={_ => handleCopyId(localId, setCopied)}>{React.string("복사")}</button>
-        {copied ? <span className="text-green-500 text-xs ml-2">{React.string("복사됨!")}</span> : React.null}
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-green-50 to-blue-50">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">{React.string("🎮")}</span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">{React.string("게임 방 생성됨")}</h2>
+          <p className="text-gray-600 text-sm">{React.string("친구가 참여할 수 있도록 ID를 공유하세요")}</p>
+        </div>
+        
+        <div className="bg-gray-50 rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <label className="block text-xs text-gray-500 mb-1">{React.string("게임 ID")}</label>
+              <div className="font-mono text-sm text-gray-800 break-all">{React.string(localId)}</div>
+            </div>
+            <button 
+              className="ml-3 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors duration-200" 
+              onClick={_ => handleCopyId(localId, setCopied)}
+            >
+              {copied ? React.string("복사됨!") : React.string("복사")}
+            </button>
+          </div>
+        </div>
+        
+        <div className="text-center">
+          <div className="inline-flex items-center px-4 py-2 bg-yellow-50 rounded-lg">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-500 mr-2"></div>
+            <span className="text-yellow-700 text-sm">{React.string("상대방 연결 대기중...")}</span>
+          </div>
+        </div>
       </div>
-      <div>{React.string("이 ID를 친구에게 공유하세요.")}</div>
-      <div className="mt-4">{React.string("상대방의 연결을 기다리는 중...")}</div>
     </div>
   } else if role == "join" && conn == None {
-    <div className="flex flex-col items-center p-4">
-      <input className="border p-2" value=remoteIdInput onChange={e => { setRemoteIdInput(_ => {
-        let target = ReactEvent.Form.target(e);
-        let value = target["value"];
-        value
-      }) }} placeholder="방장 ID 입력" />
-      <button className="m-2 px-4 py-2 bg-blue-500 text-white rounded" onClick={_ => {
-        setConnStatus(_ => "연결 중...");
-        let trimmedId = Js.String.trim(remoteIdInput);
-        let c = connect(peer, trimmedId);
-        setConn(_ => Some(c));
-      }}>
-        {React.string("연결")}
-      </button>
-      <div>{React.string(connStatus)}</div>
+    let isInputEmpty = Js.String.trim(remoteIdInput) == ""
+    let isConnecting = connStatus == "연결 중..."
+    
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-purple-50 to-pink-50">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">{React.string("🔗")}</span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">{React.string("게임 참여")}</h2>
+          <p className="text-gray-600 text-sm">{React.string("친구로부터 받은 게임 ID를 입력하세요")}</p>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{React.string("게임 ID")}</label>
+            <input 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors duration-200 font-mono text-sm"
+              value=remoteIdInput 
+              onChange={e => { 
+                setRemoteIdInput(_ => {
+                  let target = ReactEvent.Form.target(e);
+                  let value = target["value"];
+                  value
+                }) 
+              }} 
+              placeholder="예: abc123def456"
+              disabled=isConnecting
+            />
+          </div>
+          
+          <button 
+            className={
+              if isInputEmpty || isConnecting {
+                "w-full py-3 bg-gray-300 text-gray-500 font-semibold rounded-lg cursor-not-allowed"
+              } else {
+                "w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200"
+              }
+            }
+            onClick={_ => {
+              if !isInputEmpty && !isConnecting {
+                setConnStatus(_ => "연결 중...");
+                let trimmedId = Js.String.trim(remoteIdInput);
+                let c = connect(peer, trimmedId);
+                setConn(_ => Some(c));
+              }
+            }}
+            disabled={isInputEmpty || isConnecting}
+          >
+            {if isConnecting {
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>
+                {React.string("연결 중...")}
+              </div>
+            } else {
+              React.string("게임 참여하기")
+            }}
+          </button>
+          
+          {connStatus != "" && connStatus != "연결 중..." ? 
+            <div className="text-center">
+              <div className={
+                if Js.String.includes("연결 실패", connStatus) || Js.String.includes("Error", connStatus) {
+                  "inline-block px-3 py-2 bg-red-50 text-red-700 text-sm rounded-lg"
+                } else {
+                  "inline-block px-3 py-2 bg-blue-50 text-blue-700 text-sm rounded-lg"
+                }
+              }>
+                {React.string(connStatus)}
+              </div>
+            </div>
+          : React.null}
+        </div>
+      </div>
     </div>
   } else if conn == None {
     <div className="flex items-center p-4">{React.string("연결 상태: " ++ connStatus)}</div>
