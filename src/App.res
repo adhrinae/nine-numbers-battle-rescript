@@ -55,6 +55,32 @@ let make = () => {
   // Mobile tab state
   let (activeTab, setActiveTab) = React.useState(() => MobileGameTabs.MyView)
 
+  // 게임 상태 초기화 함수
+  let resetGame = () => {
+    setHand(_ => allCards)
+    setMyBoard(_ => Belt.Array.make(9, None))
+    setCurrentRound(_ => 0)
+    setOppBoard(_ => Belt.Array.make(9, None))
+    setOppHand(_ => allCards)
+    setGameStarted(_ => false)
+    setPlayerColor(_ => "blue")
+    setWaiting(_ => false)
+    setWinners(_ => Belt.Array.make(9, None))
+    setOppCard(_ => None)
+    setGameOver(_ => None)
+    setShowGameOverModal(_ => false)
+    setLocalId(_ => "")
+    setRemoteIdInput(_ => "")
+    setConn(_ => None)
+    setConnStatus(_ => "")
+    setRole(_ => "")
+    setMyRand(_ => None)
+    setOppRand(_ => None)
+    setMyTeam(_ => None)
+    setCopied(_ => false)
+    setActiveTab(_ => MobileGameTabs.MyView)
+  }
+
   // 카드 클릭 핸들러
   let onCardClick = n => {
     switch (Belt.Array.get(myBoard, currentRound), conn) {
@@ -476,6 +502,7 @@ let make = () => {
           winners
           gameOver
           onCardClick
+          resetGame
         />
         
         // 게임 종료 모달
@@ -503,13 +530,19 @@ let make = () => {
                   }}
                 </div>
                 <button 
-                  className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200"
+                  className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200 mb-3"
                   onClick={_ => {
                     setShowGameOverModal(_ => false)
                     setActiveTab(_ => MobileGameTabs.GameBoard)
                   }}
                 >
                   {React.string("🏆 결과 확인하기")}
+                </button>
+                <button 
+                  className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200"
+                  onClick={_ => resetGame()}
+                >
+                  {React.string("🎮 새 게임 시작")}
                 </button>
               </div>
             </div>
@@ -693,10 +726,16 @@ let make = () => {
               }}
             </div>
             <button 
-              className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200 text-lg"
+              className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200 text-lg mb-3"
               onClick={_ => setShowGameOverModal(_ => false)}
             >
               {React.string("🏆 결과 확인하기")}
+            </button>
+            <button 
+              className="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200 text-lg"
+              onClick={_ => resetGame()}
+            >
+              {React.string("🎮 새 게임 시작")}
             </button>
           </div>
         </div>

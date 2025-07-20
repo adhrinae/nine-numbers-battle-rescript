@@ -8,6 +8,7 @@ import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as JsxRuntime from "react/jsx-runtime";
 
 function MobileGameTabs(props) {
+  var resetGame = props.resetGame;
   var onCardClick = props.onCardClick;
   var gameOver = props.gameOver;
   var winners = props.winners;
@@ -179,7 +180,14 @@ function MobileGameTabs(props) {
                       }),
                   JsxRuntime.jsx("div", {
                         children: gameOver,
-                        className: "text-sm"
+                        className: "text-sm mb-3"
+                      }),
+                  JsxRuntime.jsx("button", {
+                        children: "🎮 새 게임 시작",
+                        className: "w-full py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg text-sm transition-colors duration-200",
+                        onClick: (function (param) {
+                            resetGame();
+                          })
                       })
                 ],
                 className: "bg-blue-50 p-3 rounded-lg text-center"

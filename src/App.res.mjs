@@ -136,6 +136,74 @@ function App(props) {
         return "MyView";
       });
   var setActiveTab = match$21[1];
+  var resetGame = function () {
+    setHand(function (param) {
+          return allCards;
+        });
+    setMyBoard(function (param) {
+          return Belt_Array.make(9, undefined);
+        });
+    setCurrentRound(function (param) {
+          return 0;
+        });
+    setOppBoard(function (param) {
+          return Belt_Array.make(9, undefined);
+        });
+    setOppHand(function (param) {
+          return allCards;
+        });
+    setGameStarted(function (param) {
+          return false;
+        });
+    setPlayerColor(function (param) {
+          return "blue";
+        });
+    setWaiting(function (param) {
+          return false;
+        });
+    setWinners(function (param) {
+          return Belt_Array.make(9, undefined);
+        });
+    setOppCard(function (param) {
+          
+        });
+    setGameOver(function (param) {
+          
+        });
+    setShowGameOverModal(function (param) {
+          return false;
+        });
+    setLocalId(function (param) {
+          return "";
+        });
+    setRemoteIdInput(function (param) {
+          return "";
+        });
+    setConn(function (param) {
+          
+        });
+    setConnStatus(function (param) {
+          return "";
+        });
+    setRole(function (param) {
+          return "";
+        });
+    setMyRand(function (param) {
+          
+        });
+    setOppRand(function (param) {
+          
+        });
+    setMyTeam(function (param) {
+          
+        });
+    setCopied(function (param) {
+          return false;
+        });
+    setActiveTab(function (param) {
+          return "MyView";
+        });
+  };
   var onCardClick = function (n) {
     var match = Belt_Array.get(myBoard, currentRound);
     if (match !== undefined && !(Caml_option.valFromOption(match) !== undefined || conn === undefined)) {
@@ -739,7 +807,7 @@ function App(props) {
                               }),
                           JsxRuntime.jsx("button", {
                                 children: "🏆 결과 확인하기",
-                                className: "w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200",
+                                className: "w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200 mb-3",
                                 onClick: (function (param) {
                                     setShowGameOverModal(function (param) {
                                           return false;
@@ -747,6 +815,13 @@ function App(props) {
                                     setActiveTab(function (param) {
                                           return "GameBoard";
                                         });
+                                  })
+                              }),
+                          JsxRuntime.jsx("button", {
+                                children: "🎮 새 게임 시작",
+                                className: "w-full py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200",
+                                onClick: (function (param) {
+                                    resetGame();
                                   })
                               })
                         ],
@@ -789,7 +864,8 @@ function App(props) {
                         oppColor: oppColor,
                         winners: winners,
                         gameOver: gameOver,
-                        onCardClick: onCardClick
+                        onCardClick: onCardClick,
+                        resetGame: resetGame
                       }),
                   tmp
                 ],
@@ -869,11 +945,18 @@ function App(props) {
                             }),
                         JsxRuntime.jsx("button", {
                               children: "🏆 결과 확인하기",
-                              className: "w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200 text-lg",
+                              className: "w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200 text-lg mb-3",
                               onClick: (function (param) {
                                   setShowGameOverModal(function (param) {
                                         return false;
                                       });
+                                })
+                            }),
+                        JsxRuntime.jsx("button", {
+                              children: "🎮 새 게임 시작",
+                              className: "w-full py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition-colors duration-200 text-lg",
+                              onClick: (function (param) {
+                                  resetGame();
                                 })
                             })
                       ],

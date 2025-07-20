@@ -17,7 +17,8 @@ let make = (
   ~oppColor: string,
   ~winners: array<option<string>>,
   ~gameOver: option<string>,
-  ~onCardClick: int => unit
+  ~onCardClick: int => unit,
+  ~resetGame: unit => unit
 ) => {
   let tabClass = (isActive) => 
     if isActive { 
@@ -203,9 +204,15 @@ let make = (
               <div className="text-lg font-bold text-blue-800 mb-1">
                 {React.string("게임 종료!")}
               </div>
-              <div className="text-sm">
+              <div className="text-sm mb-3">
                 {React.string(winner)}
               </div>
+              <button 
+                className="w-full py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg text-sm transition-colors duration-200"
+                onClick={_ => resetGame()}
+              >
+                {React.string("🎮 새 게임 시작")}
+              </button>
             </div>
           | None =>
             if currentRound > 0 {
