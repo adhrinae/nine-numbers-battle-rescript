@@ -88,42 +88,37 @@ function App(props) {
   var match$14 = React.useState(function () {
         
       });
-  var setIncomingConn = match$14[1];
-  var incomingConn = match$14[0];
+  var setConn = match$14[1];
+  var conn = match$14[0];
   var match$15 = React.useState(function () {
-        
+        return "";
       });
-  var setConn = match$15[1];
-  var conn = match$15[0];
+  var setConnStatus = match$15[1];
+  var connStatus = match$15[0];
   var match$16 = React.useState(function () {
         return "";
       });
-  var setConnStatus = match$16[1];
-  var connStatus = match$16[0];
+  var setRole = match$16[1];
+  var role = match$16[0];
   var match$17 = React.useState(function () {
-        return "";
+        
       });
-  var setRole = match$17[1];
-  var role = match$17[0];
+  var setMyRand = match$17[1];
+  var myRand = match$17[0];
   var match$18 = React.useState(function () {
         
       });
-  var setMyRand = match$18[1];
-  var myRand = match$18[0];
+  var setOppRand = match$18[1];
+  var oppRand = match$18[0];
   var match$19 = React.useState(function () {
         
       });
-  var setOppRand = match$19[1];
-  var oppRand = match$19[0];
+  var setMyTeam = match$19[1];
+  var myTeam = match$19[0];
   var match$20 = React.useState(function () {
-        
-      });
-  var setMyTeam = match$20[1];
-  var myTeam = match$20[0];
-  var match$21 = React.useState(function () {
         return false;
       });
-  var setCopied = match$21[1];
+  var setCopied = match$20[1];
   var oppWhiteCount = Belt_Array.keep(oppHand, (function (c) {
           return c % 2 === 1;
         })).length;
@@ -141,27 +136,104 @@ function App(props) {
                         return "Error: " + JSON.stringify(err);
                       });
                 }));
-          GameNetwork.onConnection(peer, (function (c) {
-                  setIncomingConn(function (param) {
-                        return Caml_option.some(c);
-                      });
-                }));
         }), []);
   React.useEffect((function () {
-          if (myTeam === undefined && oppRand !== undefined && myRand !== undefined) {
+          if (role === "host") {
+            GameNetwork.onConnection(peer, (function (c) {
+                    setConn(function (param) {
+                          return Caml_option.some(c);
+                        });
+                    setConnStatus(function (param) {
+                          return "Connected!";
+                        });
+                    var baseRand = Math.random() * 100000.0 | 0;
+                    var rand = (baseRand << 1) + 1 | 0;
+                    setMyRand(function (param) {
+                          return rand;
+                        });
+                    GameNetwork.sendRand(c, rand);
+                  }));
+          }
+          
+        }), [role]);
+  React.useEffect((function () {
+          if (conn !== undefined) {
+            var c = Caml_option.valFromOption(conn);
+            GameNetwork.onConnOpen(c, (function () {
+                    setConnStatus(function (param) {
+                          return "Connected!";
+                        });
+                    var baseRand = Math.random() * 100000.0 | 0;
+                    var rand = (baseRand << 1);
+                    setMyRand(function (param) {
+                          return rand;
+                        });
+                    GameNetwork.sendRand(c, rand);
+                  }));
+            GameNetwork.onData(c, (function ($$event) {
+                    if (typeof $$event !== "object") {
+                      return setWaiting(function (param) {
+                                  return false;
+                                });
+                    }
+                    switch ($$event.TAG) {
+                      case "Rand" :
+                          var n = $$event._0;
+                          return setOppRand(function (param) {
+                                      return n;
+                                    });
+                      case "Team" :
+                          var n$1 = $$event._1;
+                          setOppRand(function (param) {
+                                return n$1;
+                              });
+                          var myTeamName = $$event._0 === "red" ? "blue" : "red";
+                          return setMyTeam(function (param) {
+                                      return myTeamName;
+                                    });
+                      case "PlayCard" :
+                          var card = $$event._0;
+                          setOppCard(function (param) {
+                                return card;
+                              });
+                          return setOppHand(function (prev) {
+                                      return Belt_Array.keep(prev, (function (c) {
+                                                    return c !== card;
+                                                  }));
+                                    });
+                      case "AnnounceWinner" :
+                          var winner = $$event._0;
+                          return setLastResult(function (param) {
+                                      return winner;
+                                    });
+                      case "GameOver" :
+                          var winner$1 = $$event._0;
+                          return setGameOver(function (param) {
+                                      return winner$1;
+                                    });
+                      case "Other" :
+                          return ;
+                      
+                    }
+                  }));
+            GameNetwork.onConnError(c, (function (err) {
+                    setConnStatus(function (param) {
+                          return "연결 실패: " + JSON.stringify(err);
+                        });
+                  }));
+          }
+          
+        }), [conn]);
+  React.useEffect((function () {
+          if (myTeam === undefined && oppRand !== undefined && myRand !== undefined && role === "host") {
             var myR = Belt_Option.getExn(myRand);
             var oppR = Belt_Option.getExn(oppRand);
-            var isHost = role === "host";
-            var isMyTurn = isHost && myR >= oppR || !isHost && myR > oppR;
-            if (isMyTurn) {
-              var team = myR > oppR ? "red" : "blue";
-              setMyTeam(function (param) {
-                    return team;
-                  });
-              if (conn !== undefined) {
-                GameNetwork.sendTeam(Caml_option.valFromOption(conn), team, myR);
-              }
-              
+            var myTeamName = myR > oppR ? "red" : "blue";
+            setMyTeam(function (param) {
+                  return myTeamName;
+                });
+            if (conn !== undefined) {
+              GameNetwork.sendTeam(Caml_option.valFromOption(conn), myTeamName, myR);
             }
             
           }
@@ -211,63 +283,6 @@ function App(props) {
         myBoard,
         oppCard
       ]);
-  React.useEffect((function () {
-          if (conn !== undefined) {
-            GameNetwork.onData(Caml_option.valFromOption(conn), (function ($$event) {
-                    if (typeof $$event !== "object") {
-                      return setWaiting(function (param) {
-                                  return false;
-                                });
-                    }
-                    switch ($$event.TAG) {
-                      case "Rand" :
-                          var n = $$event._0;
-                          return setOppRand(function (param) {
-                                      return n;
-                                    });
-                      case "Team" :
-                          var n$1 = $$event._1;
-                          setOppRand(function (param) {
-                                return n$1;
-                              });
-                          if (myRand === undefined) {
-                            return ;
-                          }
-                          var t = myRand > n$1 ? "red" : "blue";
-                          return setMyTeam(function (param) {
-                                      return t;
-                                    });
-                      case "PlayCard" :
-                          var card = $$event._0;
-                          setOppCard(function (param) {
-                                return card;
-                              });
-                          return setOppHand(function (prev) {
-                                      return Belt_Array.keep(prev, (function (c) {
-                                                    return c !== card;
-                                                  }));
-                                    });
-                      case "AnnounceWinner" :
-                          var winner = $$event._0;
-                          return setLastResult(function (param) {
-                                      return winner;
-                                    });
-                      case "GameOver" :
-                          var winner$1 = $$event._0;
-                          return setGameOver(function (param) {
-                                      return winner$1;
-                                    });
-                      case "Other" :
-                          return ;
-                      
-                    }
-                  }));
-          }
-          
-        }), [
-        conn,
-        myRand
-      ]);
   if (role === "") {
     return JsxRuntime.jsxs("div", {
                 children: [
@@ -294,44 +309,6 @@ function App(props) {
               });
   }
   if (role === "host" && conn === undefined) {
-    var tmp;
-    if (incomingConn !== undefined) {
-      var c = Caml_option.valFromOption(incomingConn);
-      tmp = JsxRuntime.jsxs("div", {
-            children: [
-              "Peer 연결 요청이 도착했습니다. 수락하시겠습니까?",
-              JsxRuntime.jsx("button", {
-                    children: "예",
-                    className: "m-2 px-4 py-2 bg-blue-500 text-white rounded",
-                    onClick: (function (param) {
-                        setConn(function (param) {
-                              return Caml_option.some(c);
-                            });
-                        setConnStatus(function (param) {
-                              return "Connected!";
-                            });
-                        var rand = Math.random() * 100000.0 | 0;
-                        setMyRand(function (param) {
-                              return rand;
-                            });
-                        GameNetwork.sendRand(c, rand);
-                      })
-                  }),
-              JsxRuntime.jsx("button", {
-                    children: "아니오",
-                    className: "m-2 px-4 py-2 bg-gray-300 rounded",
-                    onClick: (function (param) {
-                        setIncomingConn(function (param) {
-                              
-                            });
-                      })
-                  })
-            ],
-            className: "mt-4"
-          });
-    } else {
-      tmp = null;
-    }
     return JsxRuntime.jsxs("div", {
                 children: [
                   JsxRuntime.jsxs("div", {
@@ -356,7 +333,7 @@ function App(props) {
                                           }), navigator.clipboard.writeText(localId));
                                   })
                               }),
-                          match$21[0] ? JsxRuntime.jsx("span", {
+                          match$20[0] ? JsxRuntime.jsx("span", {
                                   children: "복사됨!",
                                   className: "text-green-500 text-xs ml-2"
                                 }) : null
@@ -366,7 +343,10 @@ function App(props) {
                   JsxRuntime.jsx("div", {
                         children: "이 ID를 친구에게 공유하세요."
                       }),
-                  tmp
+                  JsxRuntime.jsx("div", {
+                        children: "상대방의 연결을 기다리는 중...",
+                        className: "mt-4"
+                      })
                 ],
                 className: "flex flex-col items-center p-4"
               });
@@ -396,21 +376,6 @@ function App(props) {
                             setConn(function (param) {
                                   return Caml_option.some(c);
                                 });
-                            GameNetwork.onConnOpen(c, (function () {
-                                    setConnStatus(function (param) {
-                                          return "Connected!";
-                                        });
-                                    var rand = Math.random() * 100000.0 | 0;
-                                    setMyRand(function (param) {
-                                          return rand;
-                                        });
-                                    GameNetwork.sendRand(c, rand);
-                                  }));
-                            GameNetwork.onConnError(c, (function (err) {
-                                    setConnStatus(function (param) {
-                                          return "연결 실패: " + JSON.stringify(err);
-                                        });
-                                  }));
                           })
                       }),
                   JsxRuntime.jsx("div", {
@@ -441,16 +406,40 @@ function App(props) {
   if (!(myTeam !== undefined && !match$5[0])) {
     return JsxRuntime.jsxs("main", {
                 children: [
-                  JsxRuntime.jsxs("section", {
-                        children: [
-                          JsxRuntime.jsx("div", {
-                                children: "Opponent: " + String(oppWhiteCount) + " white cards",
-                                className: "mr-4"
-                              }),
-                          JsxRuntime.jsx("div", {
-                                children: String(oppBlackCount) + " black cards"
-                              })
-                        ],
+                  JsxRuntime.jsx("section", {
+                        children: JsxRuntime.jsxs("div", {
+                              children: [
+                                JsxRuntime.jsx("span", {
+                                      children: "Opponent's Hand:",
+                                      className: "mr-2"
+                                    }),
+                                Belt_Array.mapWithIndex(Belt_Array.make(oppWhiteCount, 0), (function (param, i) {
+                                        return JsxRuntime.jsx(Card.make, {
+                                                    number: 1,
+                                                    onClick: (function () {
+                                                        
+                                                      }),
+                                                    selected: false,
+                                                    disabled: true,
+                                                    teamColor: "white",
+                                                    isHidden: true
+                                                  }, "opp-white-" + String(i));
+                                      })),
+                                Belt_Array.mapWithIndex(Belt_Array.make(oppBlackCount, 0), (function (param, i) {
+                                        return JsxRuntime.jsx(Card.make, {
+                                                    number: 2,
+                                                    onClick: (function () {
+                                                        
+                                                      }),
+                                                    selected: false,
+                                                    disabled: true,
+                                                    teamColor: "black",
+                                                    isHidden: true
+                                                  }, "opp-black-" + String(i));
+                                      }))
+                              ],
+                              className: "flex flex-row items-center mr-4"
+                            }),
                         className: "flex flex-row mb-2"
                       }),
                   JsxRuntime.jsx("section", {

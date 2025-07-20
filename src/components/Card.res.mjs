@@ -3,6 +3,7 @@
 import * as JsxRuntime from "react/jsx-runtime";
 
 function Card(props) {
+  var __isHidden = props.isHidden;
   var __teamColor = props.teamColor;
   var __disabled = props.disabled;
   var __selected = props.selected;
@@ -11,8 +12,11 @@ function Card(props) {
   var selected = __selected !== undefined ? __selected : false;
   var disabled = __disabled !== undefined ? __disabled : false;
   var teamColor = __teamColor !== undefined ? __teamColor : "blue";
+  var isHidden = __isHidden !== undefined ? __isHidden : false;
   var cardColor = function (n) {
-    if (n % 2 === 1) {
+    if (n === 0) {
+      return "bg-gray-300";
+    } else if (n % 2 === 1) {
       return "bg-white text-black border-gray-400";
     } else {
       return "bg-gray-800 text-white border-gray-700";
@@ -25,7 +29,7 @@ function Card(props) {
     disabled ? " opacity-40 cursor-not-allowed" : " cursor-pointer"
   );
   return JsxRuntime.jsx("div", {
-              children: number.toString(),
+              children: isHidden ? null : number.toString(),
               className: classes,
               onClick: (function (param) {
                   if (!disabled && onClick !== undefined) {

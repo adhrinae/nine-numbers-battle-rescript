@@ -1,7 +1,10 @@
 @react.component
-let make = (~number: int, ~onClick: option<unit => unit>=?, ~selected: bool=false, ~disabled: bool=false, ~teamColor: string="blue") => {
+let make = (~number: int, ~onClick: option<unit => unit>=?, ~selected: bool=false, ~disabled: bool=false, ~teamColor: string="blue", ~isHidden: bool=false) => {
   let cardColor = n =>
-    if mod(n, 2) == 1 {
+    if n == 0 {
+      // 숫자가 0일 경우: 회색 배경
+      "bg-gray-300"
+    } else if mod(n, 2) == 1 {
       // 홀수: 흰색(밝은 배경)
       "bg-white text-black border-gray-400"
     } else {
@@ -32,6 +35,6 @@ let make = (~number: int, ~onClick: option<unit => unit>=?, ~selected: bool=fals
       | None => ()
       }
     }}>
-    {React.string(Js.Int.toString(number))}
+    {if isHidden { React.null } else { React.string(Js.Int.toString(number)) }}
   </div>
 }

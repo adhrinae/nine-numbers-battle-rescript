@@ -30,7 +30,6 @@ let make = () => {
   let peer = React.useMemo0(() => makePeer())
   let (localId, setLocalId) = React.useState(() => "")
   let (remoteIdInput, setRemoteIdInput) = React.useState(() => "")
-  let (incomingConn, setIncomingConn) = React.useState(() => None)
   let (conn, setConn) = React.useState(() => None)
   let (connStatus, setConnStatus) = React.useState(() => "")
   let (role, setRole) = React.useState(() => "")
@@ -82,27 +81,82 @@ let make = () => {
     )
   }
 
+  // Peer 객체 기본 이벤트 리스너 설정
   React.useEffect0(() => {
     onOpen(peer, id => setLocalId(_ => id))
     onError(peer, err => setConnStatus(_ => "Error: " ++ Js.Json.stringify(err)))
-    onConnection(peer, c => setIncomingConn(_ => Some(c)))
     None
   })
 
-  // 팀 결정 useEffect (deps를 튜플로 전달, 구조분해)
+  // 호스트 역할일 때, 연결 요청 리스너 설정
+  React.useEffect1(() => {
+    if role == "host" {
+      onConnection(peer, c => {
+        setConn(_ => Some(c))
+        setConnStatus(_ => "Connected!")
+        // 호스트는 연결되자마자 바로 랜덤값 생성하여 전송 (호스트에게는 salt +1 추가)
+        let baseRand = int_of_float(Js.Math.random() *. 100000.0)
+        let rand = baseRand * 2 + 1 // 홀수로 만들어서 호스트임을 표시
+        setMyRand(_ => Some(rand))
+        sendRand(c, rand)
+      })
+    }
+    None
+  }, [role])
+
+  // 연결(conn)이 설정된 후, 해당 연결에 대한 이벤트 리스너 설정
+  React.useEffect1(() => {
+    switch conn {
+    | Some(c) =>
+      // 연결 성공시 처리
+      onConnOpen(c, () => {
+        setConnStatus(_ => "Connected!")
+        // 참가자는 짝수로 만들어서 참가자임을 표시
+        let baseRand = int_of_float(Js.Math.random() *. 100000.0)
+        let rand = baseRand * 2 // 짝수로 만들어서 참가자임을 표시
+        setMyRand(_ => Some(rand))
+        sendRand(c, rand)
+      })
+
+      // 데이터 수신 리스너
+      onData(c, event => {
+        switch event {
+        | Rand(n) => setOppRand(_ => Some(n))
+        | Team(teamName, n) => {
+            setOppRand(_ => Some(n))
+            // 상대방이 보낸 팀의 반대 팀으로 설정
+            let myTeamName = if teamName == "red" { "blue" } else { "red" }
+            setMyTeam(_ => Some(myTeamName))
+          }
+        | PlayCard(card) => {
+            setOppCard(_ => Some(card))
+            setOppHand(prev => Belt.Array.keep(prev, c => c != card))
+          }
+        | AnnounceWinner(winner) => setLastResult(_ => winner)
+        | ReadyForNextRound => setWaiting(_ => false)
+        | GameOver(winner) => setGameOver(_ => Some(winner))
+        | Other(_) => ()
+        }
+      })
+
+      // 연결 에러 리스너
+      onConnError(c, err => setConnStatus(_ => "연결 실패: " ++ Js.Json.stringify(err)))
+    | None => ()
+    }
+    None
+  }, [conn])
+
+  // 팀 결정 useEffect - 호스트만 팀을 결정하고 상대방에게 알림
   React.useEffect(() => {
-    if (myTeam == None && oppRand != None && myRand != None) {
+    if myTeam == None && oppRand != None && myRand != None && role == "host" {
       let myR = Belt.Option.getExn(myRand)
       let oppR = Belt.Option.getExn(oppRand)
-      let isHost = role == "host"
-      let isMyTurn = (isHost && myR >= oppR) || (!isHost && myR > oppR)
-      if (isMyTurn) {
-        let team = if myR > oppR { "red" } else { "blue" }
-        setMyTeam(_ => Some(team));
-        switch conn {
-        | Some(c) => sendTeam(c, team, myR)
-        | None => ()
-        }
+      // 랜덤값이 높은 쪽이 red, 낮은 쪽이 blue
+      let myTeamName = if myR > oppR { "red" } else { "blue" }
+      setMyTeam(_ => Some(myTeamName))
+      switch conn {
+      | Some(c) => sendTeam(c, myTeamName, myR)
+      | None => ()
       }
     }
     None
@@ -152,37 +206,6 @@ let make = () => {
     None
   }, (myBoard, oppCard))
 
-  // Listen for all PeerJS data (객체 기반)
-  React.useEffect(() => {
-    switch conn {
-    | Some(c) =>
-      onData(c, event => {
-        switch event {
-        | Rand(n) => setOppRand(_ => Some(n))
-        | Team(_, n) => {
-            setOppRand(_ => Some(n))
-            switch myRand {
-            | Some(myR) =>
-                let t = if myR > n { "red" } else { "blue" }
-                setMyTeam(_ => Some(t))
-            | None => ()
-            }
-          }
-        | PlayCard(card) => {
-            setOppCard(_ => Some(card))
-            setOppHand(prev => Belt.Array.keep(prev, c => c != card))
-          }
-        | AnnounceWinner(winner) => setLastResult(_ => winner)
-        | ReadyForNextRound => setWaiting(_ => false)
-        | GameOver(winner) => setGameOver(_ => Some(winner))
-        | Other(_) => ()
-        }
-      })
-    | None => ()
-    }
-    None
-  }, (conn, myRand))
-
   // UI flow: select host/join, handle connection, then choose color, then game
   if role == "" {
     <div className="flex flex-col items-center p-4">
@@ -197,24 +220,7 @@ let make = () => {
         {copied ? <span className="text-green-500 text-xs ml-2">{React.string("복사됨!")}</span> : React.null}
       </div>
       <div>{React.string("이 ID를 친구에게 공유하세요.")}</div>
-      {switch incomingConn {
-      | Some(c) =>
-        <div className="mt-4">
-          {React.string("Peer 연결 요청이 도착했습니다. 수락하시겠습니까?")}
-          <button className="m-2 px-4 py-2 bg-blue-500 text-white rounded" onClick={_ => {
-            setConn(_=>Some(c)); setConnStatus(_=>"Connected!");
-            let rand = int_of_float(Js.Math.random() *. 100000.0)
-            setMyRand(_ => Some(rand));
-            sendRand(c, rand); // rand 직접 전달
-          }}>
-            {React.string("예")}
-          </button>
-          <button className="m-2 px-4 py-2 bg-gray-300 rounded" onClick={_ => setIncomingConn(_=>None)}>
-            {React.string("아니오")}
-          </button>
-        </div>
-      | None => React.null
-      }}
+      <div className="mt-4">{React.string("상대방의 연결을 기다리는 중...")}</div>
     </div>
   } else if role == "join" && conn == None {
     <div className="flex flex-col items-center p-4">
@@ -228,13 +234,6 @@ let make = () => {
         let trimmedId = Js.String.trim(remoteIdInput);
         let c = connect(peer, trimmedId);
         setConn(_ => Some(c));
-        onConnOpen(c, () => {
-          setConnStatus(_ => "Connected!");
-          let rand = int_of_float(Js.Math.random() *. 100000.0)
-          setMyRand(_ => Some(rand));
-          sendRand(c, rand); // rand 직접 전달
-        });
-        onConnError(c, err => setConnStatus(_ => "연결 실패: " ++ Js.Json.stringify(err)));
       }}>
         {React.string("연결")}
       </button>
@@ -261,11 +260,34 @@ let make = () => {
     <main className="flex flex-col items-center p-4">
       // opponent overview (hidden cards count)
       <section className="flex flex-row mb-2">
-        <div className="mr-4">
-          {React.string("Opponent: " ++ string_of_int(oppWhiteCount) ++ " white cards")}
-        </div>
-        <div>
-          {React.string(string_of_int(oppBlackCount) ++ " black cards")}
+        <div className="flex flex-row items-center mr-4">
+          <span className="mr-2">{React.string("Opponent's Hand:")}</span>
+          {React.array(
+            Belt.Array.make(oppWhiteCount, 0)->Belt.Array.mapWithIndex((_, i) =>
+              <Card
+                key={"opp-white-" ++ string_of_int(i)}
+                number=1
+                onClick={() => ()}
+                disabled=true
+                selected=false
+                teamColor="white"
+                isHidden=true
+              />
+            ),
+          )}
+          {React.array(
+            Belt.Array.make(oppBlackCount, 0)->Belt.Array.mapWithIndex((_, i) =>
+              <Card
+                key={"opp-black-" ++ string_of_int(i)}
+                number=2
+                onClick={() => ()}
+                disabled=true
+                selected=false
+                teamColor="black"
+                isHidden=true
+              />
+            ),
+          )}
         </div>
       </section>
       // opponent board slots (mirrored)
