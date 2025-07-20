@@ -1,5 +1,5 @@
 {
-  "name": "nine-dragons-battle-rescript",
+  "name": "nine-numbers-battle-rescript",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,8 +8,9 @@
     "res:clean": "rescript clean",
     "res:dev": "rescript -w",
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "rescript && vite build",
+    "preview": "vite preview",
+    "clean": "rescript clean && rm -rf dist"
   },
   "dependencies": {
     "@rescript/core": "^1.6.1",
