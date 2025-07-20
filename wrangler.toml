@@ -1,0 +1,8 @@
+name = "nine-numbers-battle-rescript"
+compatibility_date = "2025-07-20"
+
+[build]
+command = "pnpm build"
+
+[assets]
+directory = "./dist"
